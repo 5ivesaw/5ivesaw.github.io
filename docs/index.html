@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth" data-tone="latte">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5IVESAW (Fivesaw) — Official Portal, In-Browser Tools &amp; Transmissions</title>
+  <meta name="description" content="Official portal of @5ivesaw featuring in-browser creative tools, repository demos, YouTube transmissions, and background radio." />
+  <meta property="og:title" content="5IVESAW (Fivesaw) — Official Portal" />
+  <meta property="og:description" content="Creative in-browser tools, Minecraft & bot frameworks, ASCII media players, and transmissions." />
+  <meta property="og:image" content="https://5ivesaw.github.io/img/og.jpg" />
+  <meta property="og:url" content="https://5ivesaw.github.io/" />
+  <link rel="canonical" href="https://5ivesaw.github.io/" />
+  <link rel="icon" type="image/png" href="./img/favicon.png" />
+
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet" />
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="./css/main.css" />
+  <link rel="stylesheet" href="./css/tools.css" />
+
+  <style>
+    /* Topbar Layout & Sticky Navigation */
+    #topbar {
+      position: sticky;
+      top: 12px;
+      z-index: 40;
+      margin: 12px auto 20px;
+      padding: 0 16px;
+      max-width: 1040px;
+      width: 100%;
+    }
+    .topbar-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .nav-pill {
+      height: 42px;
+      background: var(--elevated);
+      border: 1px solid var(--line);
+      border-radius: var(--r-full);
+      box-shadow: 0 4px 14px -4px rgba(0,0,0,0.15), inset 0 1px 0 var(--hi);
+      display: inline-flex;
+      align-items: center;
+      padding: 0 6px;
+      transition: border-color .25s ease, background-color .4s var(--ease);
+    }
+    .nav-pill:hover { border-color: var(--line-strong); }
+
+    /* Overview Scroller */
+    #overviewCard {
+      width: clamp(200px, 36vw, 440px);
+      height: 42px;
+      overflow: hidden;
+      position: relative;
+    }
+    #workspacesScroller {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 0 6px;
+    }
+    #workspacesScroller::-webkit-scrollbar { display: none; }
+    .ws-item-btn {
+      height: 30px;
+      padding: 0 7px;
+      border-radius: var(--r-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      border: 1px solid transparent;
+      color: var(--muted);
+      transition: background-color .2s, color .2s, border-color .2s;
+    }
+    .ws-item-btn:hover {
+      background-color: var(--surface);
+      border-color: var(--line);
+      color: var(--ink);
+    }
+    .ws-short-label {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 11px;
+      transition: max-width .35s var(--ease), opacity .25s ease;
+    }
+    #overviewCard:hover .ws-short-label {
+      max-width: 70px;
+      opacity: 1;
+    }
+
+    /* Theme Dock Dots */
+    .theme-dot-btn {
+      height: 28px;
+      padding: 0 5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: var(--r-full);
+      transition: background-color .2s;
+    }
+    .theme-dot-btn:hover { background: var(--surface); }
+    .theme-dot-btn.active-tone .dot-swatch {
+      transform: scale(1.22);
+      box-shadow: 0 0 0 1.5px var(--elevated), 0 0 0 3px var(--accent);
+    }
+    .dot-label {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 10px;
+      transition: max-width .3s var(--ease), opacity .2s;
+    }
+    .theme-dot-btn:hover .dot-label {
+      max-width: 60px;
+      opacity: 1;
+    }
+
+    /* Chainsaw Mode Trim */
+    .csm-only { display: none; }
+    [data-tone="chainsaw"] .csm-only { display: block; }
+    .csm-hazard {
+      background: repeating-linear-gradient(-45deg, #FF3B14 0 10px, #0D0A0B 10px 20px);
+    }
+
+    /* Avatar & Hero */
+    .hero-avatar-box {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      border-radius: 26px;
+      overflow: hidden;
+      border: 2px solid var(--line-strong);
+      box-shadow: 0 12px 28px -8px rgba(0,0,0,0.35);
+      background: #000;
+      cursor: pointer;
+    }
+    .hero-avatar-box img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity .4s ease, transform .4s var(--ease-spring);
+    }
+    .hero-avatar-box .img-ascii { opacity: 0; }
+    .hero-avatar-box:hover .img-pfp { opacity: 0; transform: scale(1.08); }
+    .hero-avatar-box:hover .img-ascii { opacity: 1; transform: scale(1.04); }
+
+    /* Bottom Streaming Music Dock */
+    #musicDock {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -8px 24px rgba(0,0,0,0.18);
+      padding: 8px 16px;
+      transition: transform .35s var(--ease);
+    }
+    .dock-content {
+      max-width: 1040px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .dock-thumb-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #000;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .dock-thumb-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s var(--ease);
+    }
+    .dock-thumb-box img.playing {
+      animation: dockThumbPulse 3s ease-in-out infinite;
+    }
+    @keyframes dockThumbPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+    .progress-scrub {
+      height: 5px;
+      background: var(--line);
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+    .progress-scrub-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    #dockQueueDrawer {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 16px;
+      width: min(100vw - 32px, 320px);
+      max-height: 380px;
+      overflow-y: auto;
+      z-index: 60;
+    }
+  </style>
+</head>
+<body class="selection:bg-[var(--accent)] selection:text-white">
+
+  <!-- Fixed Topbar -->
+  <header id="topbar">
+    <div class="topbar-bar">
+      <!-- Left: Socials & Search -->
+      <div class="nav-pill" style="gap:2px;">
+        <button type="button" id="socialsMenuBtn" class="btn sm ghost" title="Socials Launcher">
+          <span class="dot" style="width:6px;height:6px;"></span>
+          <span class="mono xs">Socials ▾</span>
+        </button>
+        <button type="button" id="openCmdPaletteBtn" class="btn sm ghost" title="Command Palette (Ctrl+K)">
+          <kbd>⌘K</kbd>
+        </button>
+      </div>
+
+      <!-- Center: Repos Overview Scroller -->
+      <nav id="overviewCard" class="nav-pill" aria-label="Workspaces">
+        <div id="workspacesScroller">
+          <a href="#/" class="ws-item-btn mono xs" style="color:var(--accent);">
+            <span>⊞</span>
+            <span class="ws-short-label">Overview</span>
+          </a>
+          <div id="workspacesTray" class="row" style="gap:3px;"></div>
+        </div>
+      </nav>
+
+      <!-- Right: Themes, Sound Toggle & Time -->
+      <div class="row" style="gap:6px;">
+        <div class="nav-pill" style="gap:2px;">
+          <!-- Latte Default -->
+          <button type="button" data-set-tone="latte" class="tone-btn theme-dot-btn active-tone" title="Velvet Latte (Soft eye-safe cream)">
+            <span class="dot-swatch" style="background:#B2A999;"></span>
+            <span class="dot-label">Latte</span>
+          </button>
+          <!-- Cream -->
+          <button type="button" data-set-tone="cream" class="tone-btn theme-dot-btn" title="Warm Oat Cream">
+            <span class="dot-swatch" style="background:#D7D0C3;"></span>
+            <span class="dot-label">Cream</span>
+          </button>
+          <!-- README Crimson -->
+          <button type="button" data-set-tone="readme" class="tone-btn theme-dot-btn" title="5ivesaw README Crimson">
+            <span class="dot-swatch" style="background:#A62929;"></span>
+            <span class="dot-label">README</span>
+          </button>
+          <!-- Chainsaw -->
+          <button type="button" data-set-tone="chainsaw" class="tone-btn theme-dot-btn" title="Chainsaw Man">
+            <span class="dot-swatch" style="background:linear-gradient(135deg, #FF3B14, #FFC700);"></span>
+            <span class="dot-label">Chainsaw</span>
+          </button>
+          <!-- Ostania -->
+          <button type="button" data-set-tone="ostania" class="tone-btn theme-dot-btn" title="Ostania Emerald">
+            <span class="dot-swatch" style="background:#245C49;"></span>
+            <span class="dot-label">Ostania</span>
+          </button>
+          <!-- Cyber -->
+          <button type="button" data-set-tone="cyber" class="tone-btn theme-dot-btn" title="Cyber Cobalt">
+            <span class="dot-swatch" style="background:#38BDF8;"></span>
+            <span class="dot-label">Cyber</span>
+          </button>
+        </div>
+
+        <button type="button" id="sfxToggleBtn" class="btn sm icon" title="Sound Effects: ON">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Canvas -->
+  <main id="appMain" class="max-w-5xl w-full mx-auto px-4 sm:px-6 pb-24">
+
+    <!-- Chainsaw Man Ripcord Hazard Banner -->
+    <div class="csm-only card pad mb-4" style="padding:0;overflow:hidden;border-color:#FF3B14;margin-bottom:18px;">
+      <div class="csm-hazard" style="height:8px;width:100%;"></div>
+      <div class="row between" style="padding:10px 16px;background:#171113;">
+        <span class="mono xs font-semibold text-[#FFC700] tracking-wider">
+          ⚡ DEVIL HUNTER SPECIAL DIVISION // PUBLIC SAFETY ARCHIVE
+        </span>
+        <button type="button" id="revChainsawBtn" class="btn sm primary" style="background:#FF3B14;color:#000;font-weight:700;">
+          PULL RIPCORD ⟳
+        </button>
+      </div>
+    </div>
+
+    <!-- SUB-VIEW CONTAINER (MOUNT FOR TOOLS & DEMOS) -->
+    <div id="subViewContainer" class="hidden"></div>
+
+    <!-- HOME PORTAL SECTIONS -->
+    <div id="homeSections" class="stack" style="gap:20px;">
+
+      <!-- 1. Hero Identity Stage -->
+      <section class="card pad spot text-center flex flex-col items-center justify-center relative overflow-hidden" style="min-height:360px;">
+        <canvas id="heroFieldCanvas" class="absolute inset-0 w-full h-full opacity-40 pointer-events-none"></canvas>
+
+        <div class="relative z-10 flex flex-col items-center gap-3 max-w-2xl mx-auto">
+          <!-- Tactile Dual-Avatar with Scanline Glitch -->
+          <div class="hero-avatar-box" title="Hand-drawn 5ivesaw Portrait — hover for ASCII matrix scan">
+            <img src="./img/pfp.webp" alt="5ivesaw portrait" class="img-pfp" />
+            <img src="./img/pfp-ascii.webp" alt="5ivesaw ascii" class="img-ascii" />
+          </div>
+
+          <div class="chip xs">
+            <span class="dot pulse"></span>
+            <a href="https://github.com/5ivesaw" target="_blank" rel="noopener noreferrer" class="hover:underline font-semibold" style="color:var(--ink);">@5ivesaw</a>
+            <span>•</span>
+            <span>Ostania Node</span>
+            <span>•</span>
+            <span class="accent">fivesaw on dc</span>
+          </div>
+
+          <!-- Morphable Title -->
+          <button type="button" id="morphBrandBtn" class="focus:outline-none" title="5 is used because it looks like S — click to morph!">
+            <h1 class="display font-extrabold tracking-wider" style="font-size:clamp(36px, 6vw, 64px);line-height:1.1;color:var(--ink);">
+              <span id="brandFirstGlyph" class="accent inline-block transition-transform duration-300">5</span>IVESAW
+            </h1>
+            <p class="mono xs upper faint" style="margin-top:4px;">
+              FIVESAW // 5 ≡ S · <span id="activeToneLabel">Velvet Latte</span>
+            </p>
+          </button>
+
+          <!-- Core Telemetry & Stack -->
+          <div class="row wrap center xs mono" style="gap:6px;margin-top:4px;">
+            <span class="chip">Repos: <strong id="statRepos">47</strong></span>
+            <span class="chip">Core: <strong>Rust · TypeScript · Python · Lua · Java</strong></span>
+            <span class="chip">Audio: <strong>296 Track Radio</strong></span>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="row wrap center" style="gap:8px;margin-top:6px;">
+            <div class="well row xs mono" style="padding:4px 12px;border-radius:var(--r-full);">
+              <span class="accent font-bold">$</span>
+              <span class="text-paper-ink">gh repo clone 5ivesaw/Sawbyte</span>
+              <button type="button" id="copyCliBtn" class="btn sm primary" style="height:24px;padding:0 8px;font-size:10.5px;">Copy</button>
+            </div>
+            <button type="button" id="heroOpenSocialsBtn" class="btn sm">
+              <span>✦ Socials Launcher</span>
+            </button>
+            <a href="https://5ivesaw.github.io/my-room/" target="_blank" rel="noopener noreferrer" class="btn sm">
+              <span>Enter 3D Room ↗</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. IN-BROWSER USEFUL TOOLS (Converted locally, cutting, editing, audio/video) -->
+      <section id="toolsSection" class="card pad">
+        <div class="section-head">
+          <span class="eyebrow">LOCAL CREATIVE WORKSHOP</span>
+          <h2>In-Browser Useful Tools</h2>
+          <p class="muted sm" style="max-width:55ch;">
+            Convert, cut, edit, and inspect directly on your device. Zero cloud uploads, zero tracking.
+          </p>
+        </div>
+        <div id="toolsGrid" class="grid grid-2"></div>
+      </section>
+
+      <!-- 3. INTERACTIVE REPOSITORY DEMOS (The 3 Flagship Demos) -->
+      <section id="demosSection" class="card pad">
+        <div class="section-head">
+          <span class="eyebrow">SHOWCASE REPOSITORY DEMOS</span>
+          <h2>Interactive Flagship Demos</h2>
+          <p class="muted sm" style="max-width:55ch;">
+            Real working browser adaptations of 5ivesaw's core engineering repositories.
+          </p>
+        </div>
+        <div id="demosGrid" class="grid grid-3"></div>
+      </section>
+
+      <!-- 4. REPOSITORY WORKSPACES (With search, filters, flagship view) -->
+      <section id="reposSection" class="card pad">
+        <div class="section-head">
+          <span class="eyebrow">5IVESAW REPOSITORIES</span>
+          <h2>Live Repository Workspaces</h2>
+          <div class="row wrap center" style="gap:8px;margin-top:8px;">
+            <div class="seg">
+              <button type="button" id="scopeFlagshipBtn" class="bg-paper-elevated font-semibold">★ Flagship</button>
+              <button type="button" id="scopeAllReposBtn">All Live Repos</button>
+            </div>
+            <div class="seg" role="tablist">
+              <button type="button" data-filter="all" class="repo-filter-btn bg-paper-elevated">All</button>
+              <button type="button" data-filter="systems" class="repo-filter-btn">Systems</button>
+              <button type="button" data-filter="interface" class="repo-filter-btn">Interface</button>
+              <button type="button" data-filter="tooling" class="repo-filter-btn">Tooling</button>
+            </div>
+            <input type="text" id="repoSearchInput" placeholder="Search repos or languages..." class="input" style="max-width:210px;height:32px;font-size:11.5px;" />
+          </div>
+          <span id="repoCountBadge" class="faint xs mono mt-2">Showing repositories...</span>
+        </div>
+        <div id="repoContainer" class="grid grid-3"></div>
+      </section>
+
+      <!-- 5. YOUTUBE VIDEOS & SHORTS TRANSMISSIONS -->
+      <section id="transmissionsSection" class="card pad">
+        <div class="section-head">
+          <span class="eyebrow">@5IVESAW ONLINE TRANSMISSIONS</span>
+          <h2>Videos, Shorts &amp; Broadcasts</h2>
+          <p class="muted sm">Public video transmissions and animations from YouTube.</p>
+        </div>
+        <div id="mediaGridContainer" class="grid grid-3"></div>
+      </section>
+
+      <!-- 6. CONTRIBUTION SNAKE & FIELD NOTES -->
+      <div class="grid grid-2" style="align-items:stretch;">
+        <section class="card pad">
+          <div class="row between" style="margin-bottom:12px;">
+            <span class="eyebrow">CONTRIBUTION PULSE</span>
+            <span class="badge" style="background:var(--accent);">Ostania Node</span>
+          </div>
+          <div class="well center p-3 overflow-hidden rounded-xl">
+            <img src="https://raw.githubusercontent.com/5ivesaw/5ivesaw/output/fivesaw-snake.svg" alt="5ivesaw contribution snake" style="max-height:90px;margin:0 auto;" onerror="this.style.display='none'" />
+          </div>
+          <p class="xs mono faint" style="margin-top:10px;">
+            Automated daily GitHub contribution stream rendered via Platane snake action.
+          </p>
+        </section>
+
+        <section class="card pad">
+          <div class="row between" style="margin-bottom:12px;">
+            <span class="eyebrow">SYSTEM DOSSIER</span>
+            <span class="xs mono faint">5 ≡ S</span>
+          </div>
+          <div class="stack" style="gap:8px;">
+            <div class="well p-3 rounded-xl xs mono">
+              <strong style="color:var(--ink);">5ivesaw Identity:</strong> 5 stands in for S. Active on Discord (@fivesaw), YouTube (@5ivesaw), GitHub (@5ivesaw).
+            </div>
+            <div class="well p-3 rounded-xl xs mono">
+              <strong style="color:var(--ink);">Online Audio Stream:</strong> Background playlist streams directly via official YouTube IFrame player without audio files downloaded.
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+
+    <!-- Centered Footer -->
+    <footer style="margin-top:40px;text-align:center;" class="xs mono faint">
+      <div class="row center wrap" style="gap:12px;">
+        <span>5IVESAW (FIVESAW)</span>
+        <span>•</span>
+        <a href="https://github.com/5ivesaw" target="_blank" rel="noopener noreferrer" class="hover:underline">github.com/5ivesaw</a>
+        <span>•</span>
+        <a href="https://www.youtube.com/@5ivesaw" target="_blank" rel="noopener noreferrer" class="hover:underline">youtube.com/@5ivesaw</a>
+        <span>•</span>
+        <a href="#top" class="hover:underline">↑ Top</a>
+      </div>
+    </footer>
+  </main>
+
+  <!-- PERSISTENT BOTTOM STREAMING MUSIC DOCK (YouTube IFrame API Stream) -->
+  <aside id="musicDock" aria-label="5ivesaw Radio Stream">
+    <!-- Up Next Drawer -->
+    <div id="dockQueueDrawer" class="card pad hidden shadow-2xl" style="padding:12px;">
+      <div class="row between pb-2 border-b border-[var(--line)]">
+        <span class="eyebrow">UP NEXT (RADIO QUEUE)</span>
+        <span class="xs mono accent">296 Songs</span>
+      </div>
+      <div id="dockQueueList" class="stack" style="gap:4px;margin-top:8px;"></div>
+    </div>
+
+    <div class="dock-content">
+      <!-- Left Track Info -->
+      <div class="row" style="gap:10px;min-width:0;flex:1 1 240px;">
+        <div class="dock-thumb-box">
+          <img id="dockThumb" src="https://i.ytimg.com/vi/eXRWHzV72sU/default.jpg" alt="" />
+        </div>
+        <div class="truncate">
+          <div id="dockTitle" class="mono font-semibold xs truncate" style="color:var(--ink);">What I've Done</div>
+          <div id="dockArtist" class="mono faint text-[11px] truncate">Linkin Park</div>
+        </div>
+      </div>
+
+      <!-- Center Player Controls & Progress Scrub -->
+      <div style="flex:2 1 380px;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="row center" style="gap:8px;">
+          <button type="button" id="dockShuffleBtn" class="btn sm icon ghost" title="Shuffle"><span data-icon="shuffle"></span></button>
+          <button type="button" id="dockPrevBtn" class="btn sm icon" title="Previous Track"><span data-icon="prev"></span></button>
+          <button type="button" id="dockPlayBtn" class="btn primary sm icon" style="width:34px;height:34px;" title="Play"><span data-icon="play"></span></button>
+          <button type="button" id="dockNextBtn" class="btn sm icon" title="Next Track"><span data-icon="next"></span></button>
+          <button type="button" id="dockStopBtn" class="btn sm icon ghost" title="Stop"><span data-icon="stop"></span></button>
+          <button type="button" id="dockRepeatBtn" class="btn sm icon ghost" title="Repeat"><span data-icon="repeat"></span></button>
+        </div>
+
+        <div class="row w-full" style="gap:8px;font-size:10px;font-family:var(--font-mono);color:var(--faint);">
+          <span id="dockTimeCur">0:00</span>
+          <div id="dockProgressTrack" class="progress-scrub">
+            <div id="dockProgress" class="progress-scrub-bar"></div>
+          </div>
+          <span id="dockTimeDur">3:26</span>
+        </div>
+      </div>
+
+      <!-- Right Volume & Queue Toggle -->
+      <div class="row" style="gap:8px;flex:1 1 180px;justify-content:flex-end;">
+        <button type="button" id="dockMuteBtn" class="btn sm icon ghost" title="Mute"><span data-icon="vol"></span></button>
+        <input type="range" id="dockVolSlider" min="0" max="100" value="45" style="max-width:80px;" title="Volume" />
+        <button type="button" id="dockQueueToggle" class="btn sm icon ghost" title="Queue / Playlist"><span data-icon="list"></span></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- SOCIALS APP LAUNCHER MODAL -->
+  <div id="socialsDropdown" class="modal" role="dialog" aria-modal="true">
+    <div class="card pad" style="max-width:480px;width:100%;">
+      <div class="row between border-b border-[var(--line)] pb-3">
+        <span class="mono xs font-semibold">✦ 5IVESAW SOCIALS &amp; LINKS</span>
+        <button type="button" id="closeSocialsLauncherBtn" class="btn sm ghost">ESC</button>
+      </div>
+      <div class="grid grid-3" style="margin-top:14px;gap:10px;">
+        <a href="https://github.com/5ivesaw" target="_blank" rel="noopener noreferrer" class="tile hover center">
+          <div style="font-size:22px;"><span data-icon="github"></span></div>
+          <span class="mono xs font-semibold">GitHub</span>
+          <span class="mono text-[10px] faint">@5ivesaw</span>
+        </a>
+        <a href="https://discord.com/users/1293243367387430952" target="_blank" rel="noopener noreferrer" class="tile hover center">
+          <div style="font-size:22px;color:#5865F2;"><span data-icon="discord"></span></div>
+          <span class="mono xs font-semibold">Discord</span>
+          <span class="mono text-[10px] faint">@fivesaw</span>
+        </a>
+        <a href="https://www.youtube.com/@5ivesaw" target="_blank" rel="noopener noreferrer" class="tile hover center">
+          <div style="font-size:22px;color:#EF4444;"><span data-icon="youtube"></span></div>
+          <span class="mono xs font-semibold">YouTube</span>
+          <span class="mono text-[10px] faint">@5ivesaw</span>
+        </a>
+        <a href="https://www.instagram.com/5ivesaw/" target="_blank" rel="noopener noreferrer" class="tile hover center">
+          <div style="font-size:22px;color:#E4405F;"><span data-icon="instagram"></span></div>
+          <span class="mono xs font-semibold">Instagram</span>
+          <span class="mono text-[10px] faint">@5ivesaw</span>
+        </a>
+        <a href="https://5ivesaw.github.io/my-room/" target="_blank" rel="noopener noreferrer" class="tile hover center">
+          <div style="font-size:22px;color:var(--accent);"><span data-icon="sparkle"></span></div>
+          <span class="mono xs font-semibold">My Room 3D</span>
+          <span class="mono text-[10px] faint">WebGL</span>
+        </a>
+        <a href="https://5ivesaw.github.io/ink-game/" target="_blank" rel="noopener noreferrer" class="tile hover center">
+          <div style="font-size:22px;color:var(--accent);"><span data-icon="play2"></span></div>
+          <span class="mono xs font-semibold">Ink Game</span>
+          <span class="mono text-[10px] faint">Canvas</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMAND PALETTE MODAL (Ctrl+K) -->
+  <div id="cmdPaletteModal" class="modal top" role="dialog" aria-modal="true">
+    <div class="card pad" style="max-width:520px;width:100%;padding:14px;">
+      <div class="row" style="gap:8px;">
+        <span class="accent"><span data-icon="search"></span></span>
+        <input type="text" id="cmdPaletteInput" placeholder="Type a command, tool, demo, or repo..." class="input" style="height:36px;border:none;background:transparent;box-shadow:none;font-size:13px;" />
+        <button type="button" id="closeCmdPaletteBtn" class="btn sm ghost">ESC</button>
+      </div>
+      <div class="divider" style="margin:8px 0;"></div>
+      <div id="cmdPaletteResults" class="stack" style="gap:4px;max-height:300px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- REPOSITORY DETAIL MODAL -->
+  <div id="repoModal" class="modal" role="dialog" aria-modal="true">
+    <div class="card pad" style="max-width:540px;width:100%;">
+      <div class="row between border-b border-[var(--line)] pb-3">
+        <div class="row">
+          <div id="modalRepoIconHolder"></div>
+          <h3 id="modalRepoName" class="mono font-semibold" style="font-size:16px;">Repository</h3>
+        </div>
+        <button type="button" id="closeRepoModalBtn" class="btn sm ghost">✕</button>
+      </div>
+
+      <p id="modalRepoDesc" class="sm muted" style="margin:14px 0;line-height:1.5;">Description</p>
+
+      <div class="row wrap xs mono faint" style="margin-bottom:14px;gap:8px;">
+        <span id="modalRepoLang" class="chip">Language</span>
+        <span id="modalRepoStars" class="chip">Stars</span>
+      </div>
+
+      <div class="well row between xs mono" style="padding:8px 12px;margin-bottom:14px;">
+        <code id="modalRepoClone" class="truncate">git clone https://...</code>
+        <button type="button" id="copyModalCloneBtn" class="btn sm primary">Copy</button>
+      </div>
+
+      <div class="row between">
+        <a id="modalRepoGithubLink" href="#" target="_blank" rel="noopener noreferrer" class="btn primary sm">
+          <span data-icon="github"></span> Open on GitHub ↗
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOUTUBE VIDEO / SHORT PLAYER MODAL -->
+  <div id="videoPlayerModal" class="modal" role="dialog" aria-modal="true">
+    <div class="card pad" style="max-width:680px;width:100%;padding:14px;">
+      <div class="row between border-b border-[var(--line)] pb-3">
+        <h4 id="videoModalTitle" class="mono font-semibold xs truncate" style="max-width:440px;">Transmission</h4>
+        <button type="button" id="closeVideoModalBtn" class="btn sm ghost">✕</button>
+      </div>
+      <div style="aspect-ratio:16/9;width:100%;background:#000;border-radius:var(--r);overflow:hidden;margin:12px 0;">
+        <iframe id="videoModalIframe" src="about:blank" style="width:100%;height:100%;border:0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      </div>
+      <div class="row between xs mono">
+        <span class="faint">@5ivesaw YouTube Broadcast</span>
+        <a id="videoModalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="accent hover:underline">Watch on YouTube ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Host -->
+  <div class="toast-host" role="status" aria-live="polite"></div>
+
+  <!-- Application Script -->
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
