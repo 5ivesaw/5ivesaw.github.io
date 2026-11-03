@@ -7,6 +7,8 @@ import { sfx } from './core/sfx.js';
 import { music, thumb } from './core/music.js';
 import { TOOLS, DEMOS } from './registry.js';
 import fiveTube from './tube/5tube.js';
+import { initContextMenu } from './core/context-menu.js';
+import { initCustomCursor } from './core/cursor.js';
 
 // SVG icons for languages
 const LANG_ICONS = {
@@ -113,20 +115,26 @@ function initHeroCanvas() {
     const spacing = 28;
     phase += 0.024 * state.csmBoost;
 
+    const pulse = music.pulse || { isPlaying: false, kick: 0, energy: 0 };
+    const musicKick = pulse.isPlaying ? pulse.kick : 0;
+    const musicEnergy = pulse.isPlaying ? pulse.energy : 0;
+
     for (let x = spacing; x < w; x += spacing) {
       for (let y = spacing; y < h; y += spacing) {
         const dx = x - mx;
         const dy = y - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const wave = Math.sin(x * 0.022 + y * 0.022 + phase) * (2.2 * state.csmBoost);
-        let pushX = 0, pushY = 0, radius = 1.2, alpha = 0.2;
+        const wave = (Math.sin(x * 0.022 + y * 0.022 + phase) * (2.2 * state.csmBoost)) + (musicKick * Math.sin((x + y) * 0.03 - phase * 2) * 4);
+        let pushX = 0, pushY = 0;
+        let radius = 1.2 + (musicKick * 0.9);
+        let alpha = 0.2 + (musicEnergy * 0.28);
 
         if (dist < 120 && dist > 0.1) {
           const force = (120 - dist) / 120;
           pushX = (dx / dist) * force * 14;
           pushY = (dy / dist) * force * 14;
-          radius = 1.2 + force * 1.6;
-          alpha = 0.2 + force * 0.5;
+          radius = 1.2 + force * 1.6 + (musicKick * 1.2);
+          alpha = 0.2 + force * 0.5 + (musicEnergy * 0.3);
         }
 
         ctx.globalAlpha = alpha;
@@ -479,6 +487,235 @@ function renderRepoPage(repoName, mountPoint) {
   });
 }
 
+// Dedicated Standalone Directory Views
+function renderDemosDirectory(mountPoint) {
+  let activeTag = 'all';
+  let searchQuery = '';
+
+  function renderList() {
+    const list = DEMOS.filter(d => {
+      const matchesTag = activeTag === 'all' || (d.tags && d.tags.includes(activeTag));
+      const q = searchQuery.toLowerCase().trim();
+      const matchesQ = !q || d.title.toLowerCase().includes(q) || d.blurb.toLowerCase().includes(q) || (d.tags && d.tags.some(t => t.includes(q)));
+      return matchesTag && matchesQ;
+    });
+
+    const gridEl = $('#demosDirectoryGrid', mountPoint);
+    if (!gridEl) return;
+
+    if (!list.length) {
+      gridEl.innerHTML = `<div class="card pad center mono xs faint" style="grid-column:1/-1;">No interactive demos match "${searchQuery}".</div>`;
+      return;
+    }
+
+    gridEl.innerHTML = list.map(d => `
+      <div class="tile hover repo-cartridge pop-in" style="display:flex;flex-direction:column;padding:16px;">
+        <div class="row between items-center mb-2">
+          <span class="badge" style="font-size:9.5px;background:var(--accent);color:#fff;">${d.repo}</span>
+          <span class="chip xs font-mono">60 FPS</span>
+        </div>
+        <h3 class="font-bold text-base text-paper-ink mb-1">${d.title}</h3>
+        <p class="xs muted clamp-3 mb-3" style="line-height:1.5;">${d.blurb}</p>
+        <div class="row wrap xs mono faint mb-3" style="gap:4px;">
+          ${(d.tags || []).map(t => `<span class="chip xs">#${t}</span>`).join('')}
+        </div>
+        <div class="row between items-center mt-auto pt-2" style="border-top:1px solid var(--line);">
+          <span class="xs mono faint">Interactive</span>
+          <a href="#/demos/${d.id}" class="btn sm primary" style="background:var(--accent);border-color:var(--accent);">
+            ⚡ Run Demo ↗
+          </a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  mountPoint.innerHTML = `
+    <div class="stack" style="gap:20px;">
+      <section class="card pad">
+        <div class="section-head mb-4">
+          <span class="eyebrow">STANDALONE DIRECTORY</span>
+          <h2>Flagship Interactive Demos</h2>
+          <p class="muted sm" style="max-width:65ch;">
+            15 bespoke in-browser experiments spanning physics, audio synthesis, 3D WebGL, computer vision, cellular emergence & retro terminal operating systems.
+          </p>
+          <div class="row wrap center mt-3" style="gap:8px;">
+            <div class="seg" id="demosDirTagSeg">
+              <button type="button" data-tag="all" class="bg-paper-elevated font-semibold">All (${DEMOS.length})</button>
+              <button type="button" data-tag="audio">Audio &amp; Synths</button>
+              <button type="button" data-tag="webcam">Vision &amp; Webcam</button>
+              <button type="button" data-tag="physics">Physics &amp; Space</button>
+              <button type="button" data-tag="3d">3D &amp; Voxels</button>
+              <button type="button" data-tag="simulation">Simulations</button>
+            </div>
+            <input type="text" id="demosDirSearch" placeholder="Search demos, tags, physics..." class="input" style="max-width:240px;height:34px;font-size:12px;" />
+          </div>
+        </div>
+
+        <div id="demosDirectoryGrid" class="grid grid-3"></div>
+      </section>
+    </div>
+  `;
+
+  renderList();
+
+  $$('#demosDirTagSeg button', mountPoint).forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('#demosDirTagSeg button', mountPoint).forEach(b => b.classList.toggle('bg-paper-elevated', b === btn));
+      activeTag = btn.dataset.tag;
+      renderList();
+      sfx('tick');
+    });
+  });
+
+  $('#demosDirSearch', mountPoint)?.addEventListener('input', e => {
+    searchQuery = e.target.value;
+    renderList();
+  });
+}
+
+function renderReposDirectory(mountPoint) {
+  let activeFilter = 'all';
+  let activeSort = 'stars';
+  let searchQuery = '';
+
+  function renderList() {
+    const q = searchQuery.toLowerCase().trim();
+    let list = state.repos.filter(r => {
+      const matchesCat = activeFilter === 'all' ||
+        (activeFilter === 'rust' && (r.lang === 'Rust')) ||
+        (activeFilter === 'systems' && (r.lang === 'Rust' || r.lang === 'C' || r.lang === 'Java' || r.lang === 'Lua')) ||
+        (activeFilter === 'interface' && (r.lang === 'TypeScript' || r.lang === 'JavaScript' || r.lang === 'HTML')) ||
+        (activeFilter === 'tooling' && (r.lang === 'Python' || r.lang === 'PowerShell' || r.lang === 'Shell'));
+      const matchesSearch = !q || r.name.toLowerCase().includes(q) || (r.desc && r.desc.toLowerCase().includes(q)) || (r.lang && r.lang.toLowerCase().includes(q));
+      return matchesCat && matchesSearch;
+    });
+
+    if (activeSort === 'stars') list.sort((a, b) => (b.stars || 0) - (a.stars || 0));
+    else if (activeSort === 'pushed') list.sort((a, b) => new Date(b.pushed || 0) - new Date(a.pushed || 0));
+    else if (activeSort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
+
+    const gridEl = $('#reposDirectoryGrid', mountPoint);
+    const countEl = $('#reposDirCountBadge', mountPoint);
+    if (countEl) countEl.textContent = `Showing ${list.length} of ${state.repos.length} repositories`;
+    if (!gridEl) return;
+
+    if (!list.length) {
+      gridEl.innerHTML = `<div class="card pad center mono xs faint" style="grid-column:1/-1;">No repositories match query "${searchQuery}".</div>`;
+      return;
+    }
+
+    gridEl.innerHTML = list.map((r, i) => `
+      <a href="#/repos/${r.name}" class="tile hover repo-cartridge pop-in" style="display:flex;flex-direction:column;padding:14px;text-decoration:none;">
+        <div class="row between xs mono faint pb-1" style="border-bottom:1px solid var(--line);">
+          <span class="row items-center" style="gap:4px;">
+            ${r.icon ? `<img src="${r.icon}" alt="" class="w-4 h-4 rounded object-contain" onerror="this.style.display='none'"/>` : getLangIcon(r.lang)}
+            <strong style="color:var(--ink);">#${String(i + 1).padStart(2, '0')}</strong>
+          </span>
+          <span>★ <strong>${r.stars || 0}</strong></span>
+        </div>
+
+        <div class="row between items-center" style="margin:6px 0 2px;">
+          <h3 class="mono font-bold text-sm truncate" style="color:var(--ink);">${r.name}</h3>
+          <span class="badge" style="font-size:9px;">${r.branch || 'main'}</span>
+        </div>
+
+        <p class="xs muted clamp-2" style="min-height:32px;line-height:1.4;">${r.desc || r.readme || 'Public repository by @5ivesaw.'}</p>
+
+        <div class="row between items-center xs mono faint mt-auto pt-2" style="border-top:1px solid var(--line);">
+          <span class="row items-center" style="gap:4px;">${getLangIcon(r.lang)} <span>${r.lang || 'Code'}</span></span>
+          <span class="accent font-medium">Open Page ↗</span>
+        </div>
+      </a>
+    `).join('');
+  }
+
+  mountPoint.innerHTML = `
+    <div class="stack" style="gap:20px;">
+      <section class="card pad">
+        <div class="section-head mb-4">
+          <span class="eyebrow">COMPLETE ARCHIVE</span>
+          <h2>Repositories Directory</h2>
+          <p class="muted sm" style="max-width:65ch;">
+            Complete archive of open source code repositories, automation bots, and frameworks created by @5ivesaw.
+          </p>
+          <div class="row wrap center mt-3" style="gap:8px;">
+            <div class="seg" id="reposDirFilterSeg">
+              <button type="button" data-filter="all" class="bg-paper-elevated font-semibold">All (${state.repos.length})</button>
+              <button type="button" data-filter="rust">Rust</button>
+              <button type="button" data-filter="systems">Systems</button>
+              <button type="button" data-filter="interface">Interface</button>
+              <button type="button" data-filter="tooling">Tooling</button>
+            </div>
+            <select id="reposDirSortSelect" class="input" style="max-width:140px;height:34px;font-size:11.5px;padding:0 6px;">
+              <option value="stars">Most Stars</option>
+              <option value="pushed">Recently Pushed</option>
+              <option value="name">Alphabetical</option>
+            </select>
+            <input type="text" id="reposDirSearchInput" placeholder="Search repos, tags, languages..." class="input" style="max-width:210px;height:34px;font-size:12px;" />
+          </div>
+          <span id="reposDirCountBadge" class="faint xs mono mt-2">Showing repositories...</span>
+        </div>
+
+        <div id="reposDirectoryGrid" class="grid grid-3"></div>
+      </section>
+    </div>
+  `;
+
+  renderList();
+
+  $$('#reposDirFilterSeg button', mountPoint).forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('#reposDirFilterSeg button', mountPoint).forEach(b => b.classList.toggle('bg-paper-elevated', b === btn));
+      activeFilter = btn.dataset.filter;
+      renderList();
+      sfx('tick');
+    });
+  });
+
+  $('#reposDirSortSelect', mountPoint)?.addEventListener('change', e => {
+    activeSort = e.target.value;
+    renderList();
+    sfx('tick');
+  });
+
+  $('#reposDirSearchInput', mountPoint)?.addEventListener('input', e => {
+    searchQuery = e.target.value;
+    renderList();
+  });
+}
+
+function renderToolsDirectory(mountPoint) {
+  mountPoint.innerHTML = `
+    <div class="stack" style="gap:20px;">
+      <section class="card pad">
+        <div class="section-head mb-4">
+          <span class="eyebrow">LOCAL CREATIVE WORKSHOP</span>
+          <h2>In-Browser Useful Tools Directory</h2>
+          <p class="muted sm" style="max-width:65ch;">
+            Convert, cut, edit, inspect and test directly inside your browser. Zero cloud telemetry, zero uploads, instant local execution.
+          </p>
+        </div>
+
+        <div class="grid grid-2" style="gap:16px;">
+          ${TOOLS.map(t => `
+            <a href="#/tools/${t.id}" class="tile hover pop-in" style="padding:18px;">
+              <div class="row between items-center mb-2">
+                <span class="tl-sticker" style="font-size:9.5px;padding:2px 8px;">${icon(t.icon)} TOOL</span>
+                <span class="accent font-medium text-xs">Launch Studio ↗</span>
+              </div>
+              <h3 class="font-bold text-lg mb-1" style="color:var(--ink);">${t.title}</h3>
+              <p class="xs muted clamp-2 mb-3">${t.blurb}</p>
+              <div class="row wrap xs mono faint mt-auto" style="gap:4px;">
+                ${t.tags.map(tag => `<span class="chip xs">#${tag}</span>`).join('')}
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 // Router
 async function navigate() {
   const hash = location.hash.slice(1) || '/';
@@ -524,7 +761,19 @@ async function navigate() {
   const mountPoint = $('#subViewMount');
   const crumb = $('#crumbCurrent');
 
-  if (hash.startsWith('/5tube')) {
+  if (hash === '/demos' || hash === '/demos/') {
+    crumb.textContent = 'Flagship Demos Directory';
+    renderDemosDirectory(mountPoint);
+    return;
+  } else if (hash === '/repos' || hash === '/repos/') {
+    crumb.textContent = 'Repositories Archive';
+    renderReposDirectory(mountPoint);
+    return;
+  } else if (hash === '/tools' || hash === '/tools/') {
+    crumb.textContent = 'In-Browser Workshop';
+    renderToolsDirectory(mountPoint);
+    return;
+  } else if (hash.startsWith('/5tube')) {
     crumb.textContent = '5Tube Multiplayer';
     try {
       state.currentUnmount = fiveTube.mount(mountPoint, { toast, sfx, store });
@@ -665,7 +914,8 @@ function renderToolsGrid() {
 function renderDemosGrid() {
   const container = $('#demosGrid');
   if (!container) return;
-  container.innerHTML = DEMOS.map(d => `
+  const spotlight = DEMOS.slice(0, 6);
+  container.innerHTML = spotlight.map(d => `
     <a href="#/demos/${d.id}" class="tile hover pop-in" style="padding:16px;">
       <div class="row between">
         <span class="badge" style="font-size:9px;">${d.repo}</span>
@@ -1340,6 +1590,37 @@ function initMusicDock() {
     repeatBtn.title = `Repeat: ${music.repeat.toUpperCase()}`;
   });
 
+  // Topbar & site-wide music reactive pulse
+  const eqBars = $$('#topbarVisualizer .eq-bar');
+  const hazardBar = $('.csm-hazard');
+
+  music.on('pulse', p => {
+    if (eqBars && eqBars.length) {
+      if (p.isPlaying) {
+        eqBars[0].style.height = `${4 + p.kick * 14}px`;
+        eqBars[1].style.height = `${6 + p.energy * 12}px`;
+        eqBars[2].style.height = `${5 + p.snare * 14}px`;
+        eqBars[3].style.height = `${4 + p.bass * 16}px`;
+      } else {
+        eqBars[0].style.height = '4px';
+        eqBars[1].style.height = '6px';
+        eqBars[2].style.height = '4px';
+        eqBars[3].style.height = '5px';
+      }
+    }
+    if (hazardBar && p.isPlaying) {
+      hazardBar.style.filter = `brightness(${1 + p.snare * 0.45})`;
+    }
+    if (thumbEl && p.isPlaying) {
+      thumbEl.style.transform = `scale(${1 + p.kick * 0.06})`;
+    }
+  });
+
+  $('#topbarVisualizer')?.addEventListener('click', () => {
+    music.toggle();
+    sfx('click');
+  });
+
   // Dock interactions
   playBtn.addEventListener('click', () => { music.toggle(); sfx('click'); });
   prevBtn.addEventListener('click', () => { music.prev(); sfx('click'); });
@@ -1543,6 +1824,10 @@ async function initApp() {
   // Load saved theme
   const savedTone = store.get('tone', 'latte');
   applyTheme(savedTone);
+
+  // Initialize interactive cursor & context menu
+  initCustomCursor();
+  initContextMenu();
 
   // 1. Mount instant static tools & demos IMMEDIATELY without waiting for network
   renderToolsGrid();

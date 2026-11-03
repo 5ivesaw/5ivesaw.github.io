@@ -251,9 +251,9 @@
           <kbd>⌘K</kbd>
         </button>
         <span style="width:1px;height:18px;background:var(--line);margin:0 2px;"></span>
-        <a href="#toolsSection" class="btn sm ghost mono xs" style="padding:0 6px;" title="Jump to in-browser creative tools">Tools</a>
-        <a href="#demosSection" class="btn sm ghost mono xs" style="padding:0 6px;" title="Jump to interactive demos">Demos</a>
-        <a href="#reposSection" class="btn sm ghost mono xs" style="padding:0 6px;" title="Jump to repositories">Repos</a>
+        <a href="#/tools" class="btn sm ghost mono xs" style="padding:0 6px;" title="In-Browser Creative Tools Directory">Tools</a>
+        <a href="#/demos" class="btn sm ghost mono xs" style="padding:0 6px;" title="Interactive Flagship Demos Directory">Demos</a>
+        <a href="#/repos" class="btn sm ghost mono xs" style="padding:0 6px;" title="Complete Repositories Directory">Repos</a>
         <a href="#/5tube" class="btn sm mono xs font-bold" style="background:#FF0000;color:#fff;border-radius:var(--r-full);padding:2px 8px;margin-left:2px;box-shadow:0 2px 8px rgba(255,0,0,0.35);" title="5Tube: Synchronized Multiplayer YouTube Theater">▶ 5Tube</a>
       </div>
 
@@ -301,6 +301,13 @@
             <span class="dot-swatch" style="background:#38BDF8;"></span>
             <span class="dot-label">Cyber</span>
           </button>
+        </div>
+
+        <div id="topbarVisualizer" class="row items-center" style="gap:2.5px;padding:0 4px;height:24px;cursor:pointer;" title="5IVESAW Audio Reactive Telemetry">
+          <span class="eq-bar" style="width:2.5px;height:6px;background:var(--accent);border-radius:2px;"></span>
+          <span class="eq-bar" style="width:2.5px;height:12px;background:var(--accent);border-radius:2px;"></span>
+          <span class="eq-bar" style="width:2.5px;height:8px;background:var(--accent);border-radius:2px;"></span>
+          <span class="eq-bar" style="width:2.5px;height:14px;background:var(--accent);border-radius:2px;"></span>
         </div>
 
         <button type="button" id="sfxToggleBtn" class="btn sm icon" title="Sound Effects: ON">
@@ -516,6 +523,11 @@
             </div>
           </a>
         </div>
+        <div class="row center" style="margin-top:16px;">
+          <a href="#/tools" class="btn sm ghost mono" style="gap:6px;">
+            <span>Browse All In-Browser Tools in Workshop Directory ↗</span>
+          </a>
+        </div>
       </section>
 
       <!-- 3. INTERACTIVE REPOSITORY DEMOS (The 5 Flagship Demos) -->
@@ -572,6 +584,11 @@
         </div>
 
         <div id="demosGrid" class="grid grid-3"></div>
+        <div class="row center" style="margin-top:16px;">
+          <a href="#/demos" class="btn sm ghost mono" style="gap:6px;">
+            <span>Browse All 15+ Flagship Demos in Demos Directory ↗</span>
+          </a>
+        </div>
       </section>
 
       <!-- 4. REPOSITORY WORKSPACES (With search, filters, flagship view) -->
@@ -595,6 +612,11 @@
           <span id="repoCountBadge" class="faint xs mono mt-2">Showing repositories...</span>
         </div>
         <div id="repoContainer" class="grid grid-3"></div>
+        <div class="row center" style="margin-top:16px;">
+          <a href="#/repos" class="btn sm ghost mono" style="gap:6px;">
+            <span>Explore All 47+ Repositories in Standalone Directory ↗</span>
+          </a>
+        </div>
       </section>
 
       <!-- 5. YOUTUBE VIDEOS & SHORTS TRANSMISSIONS -->
@@ -806,6 +828,38 @@
         <span class="faint">@5ivesaw YouTube Broadcast</span>
         <a id="videoModalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="accent hover:underline">Watch on YouTube ↗</a>
       </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM CONTEXT MENU (Right Click) -->
+  <div id="customContextMenu" class="context-menu hidden">
+    <div class="context-menu-item" data-action="play-pause">
+      <span class="context-icon">▶</span>
+      <span id="ctxPlayText">Play / Pause Radio</span>
+      <span class="context-kbd">Space</span>
+    </div>
+    <div class="context-menu-item" data-action="next-track">
+      <span class="context-icon">⏭</span>
+      <span>Next Track</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="open-cmd">
+      <span class="context-icon">⌘</span>
+      <span>Command Palette</span>
+      <span class="context-kbd">⌘K</span>
+    </div>
+    <div class="context-menu-item" data-action="open-5tube">
+      <span class="context-icon">👥</span>
+      <span>5Tube Multiplayer</span>
+    </div>
+    <div class="context-menu-divider"></div>
+    <div class="context-menu-item" data-action="cycle-theme">
+      <span class="context-icon">🎨</span>
+      <span>Next Theme Palette</span>
+    </div>
+    <div class="context-menu-item" data-action="copy-url">
+      <span class="context-icon">🔗</span>
+      <span>Copy Page Link</span>
     </div>
   </div>
 

@@ -46,7 +46,44 @@ function loadApi() {
   });
 }
 
-function setState(st) { if (S.state !== st) { S.state = st; emit('state', st); } }
+function setState(st) {
+  if (S.state !== st) {
+    S.state = st;
+    emit('state', st);
+    if (st === 'playing') startPulseLoop();
+  }
+}
+
+let pulseAnim = null;
+let pulsePhase = 0;
+let currentPulseData = { kick: 0, snare: 0, bass: 0, energy: 0, phase: 0, isPlaying: false };
+
+function startPulseLoop() {
+  if (pulseAnim) return;
+  function loop() {
+    if (S.state === 'playing') {
+      pulsePhase += 0.08;
+      const bpm = 126;
+      const beatPeriod = 60 / bpm;
+      const now = performance.now() / 1000;
+      const beatFraction = (now % beatPeriod) / beatPeriod;
+      const kick = Math.pow(Math.max(0, 1 - beatFraction * 2.6), 2.2);
+      const snare = ((Math.floor(now / beatPeriod) % 2 === 1) ? Math.pow(Math.max(0, 1 - beatFraction * 2.2), 1.8) : 0);
+      const bass = (Math.sin(pulsePhase * 2) * 0.5 + 0.5) * 0.6 + kick * 0.4;
+      const energy = 0.25 + kick * 0.55 + snare * 0.25;
+
+      currentPulseData = { kick, snare, bass, energy, phase: pulsePhase, isPlaying: true };
+      emit('pulse', currentPulseData);
+    } else {
+      if (currentPulseData.isPlaying) {
+        currentPulseData = { kick: 0, snare: 0, bass: 0, energy: 0, phase: 0, isPlaying: false };
+        emit('pulse', currentPulseData);
+      }
+    }
+    pulseAnim = requestAnimationFrame(loop);
+  }
+  pulseAnim = requestAnimationFrame(loop);
+}
 
 function tickStart() {
   if (S.timer) return;
@@ -232,4 +269,5 @@ export const music = {
   cycleRepeat() { S.repeat = { all: 'one', one: 'off', off: 'all' }[S.repeat]; store.set('music.repeat', S.repeat); emit('mode'); },
   setAutoplay(on) { S.autoplay = !!on; store.set('music.autoplay', S.autoplay); emit('mode'); },
   upNext(n = 5) { const out = []; for (let i = 1; i <= n && i < S.order.length; i++) out.push(S.tracks[S.order[(S.pos + i) % S.order.length]]); return out; },
+  get pulse() { return currentPulseData; },
 };
