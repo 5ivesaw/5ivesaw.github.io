@@ -4,7 +4,8 @@ import {
   $, $$, icon, formatBytes, formatTime, toast, cssVar, onThemeChange, fitCanvas
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
-import { palette, rr } from './_kit.js';
+import { music } from '../core/music.js';
+import { palette, rr, rgba } from './_kit.js';
 
 export default {
   mount(root, api) {
@@ -254,17 +255,38 @@ export default {
       ctx.fillStyle = '#0c0a0b';
       ctx.fillRect(0, 0, w, h);
 
-      if (!state.analyser) {
-        // Idle animation when no audio is playing
+      const pulse = music.pulse;
+      let freqData = null;
+      let timeData = null;
+
+      if (state.analyser) {
+        freqData = new Uint8Array(state.analyser.frequencyBinCount);
+        timeData = new Uint8Array(state.analyser.frequencyBinCount);
+        state.analyser.getByteFrequencyData(freqData);
+        state.analyser.getByteTimeDomainData(timeData);
+      } else if (pulse && pulse.isPlaying && pulse.bands) {
+        // Automatically sync with background radio stream!
+        const len = 64;
+        freqData = new Uint8Array(len);
+        timeData = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          const bandIdx = Math.min(15, Math.floor((i / len) * 16));
+          freqData[i] = Math.min(255, Math.floor((pulse.bands[bandIdx] || 0) * 255));
+          const waveVal = pulse.waveform ? (pulse.waveform[i % 32] || 0) : 0;
+          timeData[i] = Math.min(255, Math.max(0, Math.floor((waveVal + 1) * 127.5)));
+        }
+        if (!state.isMic && !state.audioElement) {
+          const trackEl = $('#apTrackName', root);
+          if (trackEl && trackEl.textContent !== 'Radio Stream (Live)') {
+            trackEl.textContent = 'Radio Stream (Live)';
+          }
+        }
+      } else {
+        // Idle state when nothing is playing
         drawIdleState(w, h);
         state.animId = requestAnimationFrame(renderLoop);
         return;
       }
-
-      const freqData = new Uint8Array(state.analyser.frequencyBinCount);
-      const timeData = new Uint8Array(state.analyser.frequencyBinCount);
-      state.analyser.getByteFrequencyData(freqData);
-      state.analyser.getByteTimeDomainData(timeData);
 
       // Color scheme
       let col = cssVar('--accent') || '#942929';

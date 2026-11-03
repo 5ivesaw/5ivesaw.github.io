@@ -5,6 +5,7 @@ import {
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
 import { palette, setStat, rgba, rr, reduced } from './_kit.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -230,11 +231,16 @@ export default {
       }
 
       // Draw Path
+      const pulse = (music.pulse && music.pulse.isPlaying) ? music.pulse : null;
+      const kick = pulse ? pulse.kick : 0;
+
       if (finalPath.length > 1) {
         if (config.humanize && splinePoints.length > 1) {
-          // Spline smooth line
+          // Spline smooth line with music glow
           ctx.strokeStyle = pal.accent;
-          ctx.lineWidth = 3.5;
+          ctx.lineWidth = 3.5 + kick * 2.5;
+          ctx.shadowColor = pal.accent;
+          ctx.shadowBlur = 8 + kick * 14;
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
           ctx.beginPath();
@@ -243,23 +249,24 @@ export default {
             ctx.lineTo(splinePoints[i].x, splinePoints[i].y);
           }
           ctx.stroke();
+          ctx.shadowBlur = 0;
 
           // Walking robot cursor
           if (walkerProgress < splinePoints.length - 1) {
             const p = splinePoints[Math.floor(walkerProgress)];
             ctx.fillStyle = '#fff';
             ctx.shadowColor = pal.accent;
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 10 + kick * 10;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, 6 + kick * 3, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
-            walkerProgress = (walkerProgress + 0.6) % splinePoints.length;
+            walkerProgress = (walkerProgress + 0.6 + kick * 0.4) % splinePoints.length;
           }
         } else {
           // Standard path segments
           ctx.strokeStyle = pal.accent;
-          ctx.lineWidth = 3;
+          ctx.lineWidth = 3 + kick * 2;
           ctx.beginPath();
           ctx.moveTo((finalPath[0].c + 0.5) * cw, (finalPath[0].r + 0.5) * ch);
           for (let i = 1; i < finalPath.length; i++) {
@@ -272,7 +279,7 @@ export default {
       // Draw Start Node (Green circle with S)
       ctx.fillStyle = '#10B981';
       ctx.beginPath();
-      ctx.arc((startNode.c + 0.5) * cw, (startNode.r + 0.5) * ch, Math.min(cw, ch) * 0.42, 0, Math.PI * 2);
+      ctx.arc((startNode.c + 0.5) * cw, (startNode.r + 0.5) * ch, (Math.min(cw, ch) * 0.42) * (1 + kick * 0.15), 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 11px sans-serif';
@@ -283,12 +290,12 @@ export default {
       // Draw Goal Node (Red circle with G)
       ctx.fillStyle = '#EF4444';
       ctx.beginPath();
-      ctx.arc((goalNode.c + 0.5) * cw, (goalNode.r + 0.5) * ch, Math.min(cw, ch) * 0.42, 0, Math.PI * 2);
+      ctx.arc((goalNode.c + 0.5) * cw, (goalNode.r + 0.5) * ch, (Math.min(cw, ch) * 0.42) * (1 + kick * 0.15), 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.fillText('G', (goalNode.c + 0.5) * cw, (goalNode.r + 0.5) * ch);
 
-      if (searching || (config.humanize && finalPath.length > 1)) {
+      if (searching || (config.humanize && finalPath.length > 1) || pulse) {
         animRaf = requestAnimationFrame(renderGrid);
       }
     }

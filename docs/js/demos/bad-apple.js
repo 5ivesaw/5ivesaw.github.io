@@ -5,6 +5,7 @@ import {
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
 import { palette, rgba } from './_kit.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -197,37 +198,56 @@ export default {
       }
     }
 
-    // Procedural animation drawer (Silhouette Bad Apple / Chainsaw head bouncing)
+    // Procedural animation drawer (Silhouette Bad Apple / Chainsaw head bouncing with radio tempo)
     function drawProceduralFrame(t) {
       const sw = sampleCanvas.width;
       const sh = sampleCanvas.height;
       sampleCtx.fillStyle = '#000';
       sampleCtx.fillRect(0, 0, sw, sh);
 
-      const cx = sw / 2 + Math.sin(t * 1.5) * (sw * 0.15);
-      const cy = sh / 2 + Math.cos(t * 2) * (sh * 0.1);
+      const pulse = (music.pulse && music.pulse.isPlaying) ? music.pulse : null;
+      const kick = pulse ? pulse.kick : 0;
+      const bands = pulse ? pulse.bands : null;
+      const scale = 1 + kick * 0.28;
+
+      const cx = sw / 2 + Math.sin(t * 1.5) * (sw * 0.12);
+      const cy = sh / 2 + Math.cos(t * 2) * (sh * 0.08);
+
+      // Audio spectrum soundwaves in background
+      if (bands && bands.length) {
+        sampleCtx.strokeStyle = 'rgba(255,255,255,0.2)';
+        sampleCtx.lineWidth = 1;
+        sampleCtx.beginPath();
+        for (let b = 0; b < 16; b++) {
+          const r = 35 + (bands[b] || 0) * 25 * scale;
+          const a = (b / 16) * Math.PI * 2;
+          sampleCtx.moveTo(cx, cy);
+          sampleCtx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        }
+        sampleCtx.stroke();
+      }
 
       // White apple shape
       sampleCtx.fillStyle = '#fff';
       sampleCtx.beginPath();
-      sampleCtx.arc(cx - 15, cy, 28, 0, Math.PI * 2);
-      sampleCtx.arc(cx + 15, cy, 28, 0, Math.PI * 2);
-      sampleCtx.arc(cx, cy + 12, 30, 0, Math.PI * 2);
+      sampleCtx.arc(cx - 15 * scale, cy, 28 * scale, 0, Math.PI * 2);
+      sampleCtx.arc(cx + 15 * scale, cy, 28 * scale, 0, Math.PI * 2);
+      sampleCtx.arc(cx, cy + 12 * scale, 30 * scale, 0, Math.PI * 2);
       sampleCtx.fill();
 
       // Stem & Leaf
       sampleCtx.fillStyle = '#fff';
-      sampleCtx.fillRect(cx - 3, cy - 38, 6, 16);
+      sampleCtx.fillRect(cx - 3 * scale, cy - 38 * scale, 6 * scale, 16 * scale);
       sampleCtx.beginPath();
-      sampleCtx.ellipse(cx + 12, cy - 35, 12, 6, Math.PI / 4, 0, Math.PI * 2);
+      sampleCtx.ellipse(cx + 12 * scale, cy - 35 * scale, 12 * scale, 6 * scale, Math.PI / 4, 0, Math.PI * 2);
       sampleCtx.fill();
 
       // Inverted '5' cut in center
       sampleCtx.fillStyle = '#000';
-      sampleCtx.font = 'bold 36px sans-serif';
+      sampleCtx.font = `bold ${Math.floor(36 * scale)}px sans-serif`;
       sampleCtx.textAlign = 'center';
       sampleCtx.textBaseline = 'middle';
-      sampleCtx.fillText('5', cx, cy + 5);
+      sampleCtx.fillText('5', cx, cy + 5 * scale);
     }
 
     function renderLoop() {

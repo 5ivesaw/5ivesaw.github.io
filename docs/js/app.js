@@ -1594,8 +1594,42 @@ function initMusicDock() {
   // Topbar & site-wide music reactive pulse
   const eqBars = $$('#topbarVisualizer .eq-bar');
   const hazardBar = $('.csm-hazard');
+  let lastVibeBar = -1;
+  let currentVibingEl = null;
 
   music.on('pulse', p => {
+    if (p.isPlaying) {
+      document.documentElement.style.setProperty('--music-beat-dur', `${(60 / (p.bpm || 120)).toFixed(3)}s`);
+
+      // Subtle ambient environmental vibe every 16 bars during playback
+      if (p.bar > 0 && p.bar % 16 === 0 && p.beat === 0 && p.bar !== lastVibeBar) {
+        lastVibeBar = p.bar;
+        if (currentVibingEl) {
+          currentVibingEl.classList.remove('music-vibing');
+          currentVibingEl = null;
+        }
+        const candidates = [
+          $('.p-avatar'),
+          $('#brandTitle'),
+          $('.csm-head-badge'),
+          $('#dockTrackTitle'),
+          $('.eyebrow')
+        ].filter(el => el && el.offsetParent !== null);
+
+        if (candidates.length) {
+          const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+          chosen.classList.add('music-vibing');
+          currentVibingEl = chosen;
+          setTimeout(() => {
+            if (currentVibingEl === chosen) {
+              chosen.classList.remove('music-vibing');
+              currentVibingEl = null;
+            }
+          }, (60 / (p.bpm || 120)) * 4000);
+        }
+      }
+    }
+
     if (eqBars && eqBars.length) {
       if (p.isPlaying) {
         const b = p.bands || [p.kick, p.bass, p.snare, p.energy];
@@ -1897,8 +1931,11 @@ async function initApp() {
   renderTransmissions();
   initOverviewScroller();
 
-  // If currently on a repo page, re-render now that metadata is loaded
-  if (location.hash.startsWith('#/repos/')) {
+  // If currently on repos directory or a repo page, re-render now that metadata is loaded
+  if (location.hash === '#/repos' || location.hash === '#/repos/') {
+    const mountPoint = $('#subViewMount');
+    if (mountPoint) renderReposDirectory(mountPoint);
+  } else if (location.hash.startsWith('#/repos/')) {
     const repoName = decodeURIComponent(location.hash.replace('#/repos/', ''));
     const mountPoint = $('#subViewMount');
     if (mountPoint) renderRepoPage(repoName, mountPoint);

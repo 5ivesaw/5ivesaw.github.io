@@ -145,7 +145,10 @@ export function fitCanvas(canvas, maxDpr = 2) {
   const r = canvas.getBoundingClientRect();
   const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
   if (canvas.width !== w * dpr || canvas.height !== h * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; }
-  const ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const ctx = canvas.getContext('2d');
+  if (ctx && typeof ctx.setTransform === 'function') {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
   return { w, h, dpr, ctx };
 }
 

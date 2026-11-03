@@ -4,6 +4,7 @@ import {
   $, $$, icon, download, toast, onThemeChange, fitCanvas
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -71,7 +72,7 @@ export default {
             <div id="vxScreenBox" class="vx-screen">
               <div class="vx-hud">
                 <span class="badge" style="background:rgba(0,0,0,0.85);color:var(--accent);border:1px solid var(--line);">
-                  SAWBYTE CHUNK: <strong>24×12×24</strong> · SELECTED: <strong id="vxSelectedText">GRASS</strong>
+                  SAWBYTE CHUNK: <strong>24×12×24</strong> · SELECTED: <strong id="vxSelectedText">GRASS</strong> · AUDIO: <strong id="vxPulseIndicator" style="color:#00F0FF;">PULSE SYNC</strong>
                 </span>
               </div>
               <div class="vx-crosshair"></div>
@@ -263,6 +264,28 @@ export default {
 
       ctx.clearRect(0, 0, w, h);
 
+      const pulse = (music.pulse && music.pulse.isPlaying) ? music.pulse : null;
+      const kick = pulse ? pulse.kick : 0;
+      const bands = pulse ? pulse.bands : null;
+
+      // Music reactive Aurora / Sky beams
+      if (bands && bands.length) {
+        ctx.save();
+        const beamW = w / 16;
+        for (let i = 0; i < 16; i++) {
+          const b = bands[i] || 0;
+          if (b > 0.05) {
+            const bh = b * (h * 0.45);
+            const grad = ctx.createLinearGradient(0, 0, 0, bh);
+            grad.addColorStop(0, 'rgba(0, 240, 255, 0.25)');
+            grad.addColorStop(1, 'rgba(139, 92, 246, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(i * beamW, 0, beamW - 2, bh);
+          }
+        }
+        ctx.restore();
+      }
+
       const cosY = Math.cos(state.cameraAngleY);
       const sinY = Math.sin(state.cameraAngleY);
       const cosX = Math.cos(state.cameraAngleX);
@@ -270,7 +293,7 @@ export default {
 
       const blockSize = 14;
       const originX = w / 2;
-      const originY = h * 0.65;
+      const originY = h * 0.65 + (pulse ? Math.sin(pulse.phase * 2) * (2 + kick * 5) : 0);
 
       // Draw voxel cubes back-to-front
       const voxelList = [];

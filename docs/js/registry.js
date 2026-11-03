@@ -16,9 +16,9 @@ import particleGalaxyDemo from './demos/particle-galaxy.js';
 import voxelSandboxDemo from './demos/voxel-sandbox.js';
 import webcamFaceMeshDemo from './demos/webcam-face-mesh.js';
 import chiptuneTrackerDemo from './demos/chiptune-tracker.js';
-import gameOfLifeDemo from './demos/game-of-life.js';
+import warpTunnelDemo from './demos/warp-tunnel.js';
 import rayMarchingDemo from './demos/ray-marching.js';
-import sortingVisualizerDemo from './demos/sorting-visualizer.js';
+import chladniPlateDemo from './demos/chladni-plate.js';
 import terminalOsDemo from './demos/terminal-os.js';
 
 export const TOOLS = [
@@ -157,13 +157,13 @@ export const DEMOS = [
     runner: chiptuneTrackerDemo
   },
   {
-    id: 'game-of-life',
-    repo: 'quantum-cellular-automata',
-    title: 'Quantum Cellular Automata Lab',
-    blurb: 'Conway game of life with phosphor age-decay trails, macro presets & cosmic ray mutations.',
-    icon: 'pointer',
-    tags: ['simulation', 'automata', 'math'],
-    runner: gameOfLifeDemo
+    id: 'warp-tunnel',
+    repo: 'cyber-warp-flight',
+    title: 'Hyperspace Audio Warp Tunnel',
+    blurb: 'High-speed 3D perspective wormhole flight simulator locked to the radio audio spectrum & bass drops.',
+    icon: 'sparkle',
+    tags: ['3d', 'flight', 'audio', 'hyperspace'],
+    runner: warpTunnelDemo
   },
   {
     id: 'ray-marching',
@@ -175,13 +175,13 @@ export const DEMOS = [
     runner: rayMarchingDemo
   },
   {
-    id: 'sorting-visualizer',
-    repo: 'sorting-harmonics-engine',
-    title: 'Audio Sorting Algorithm Engine',
-    blurb: 'Visual and auditory representation of algorithm complexity with WebAudio tone synthesis.',
-    icon: 'pointer',
-    tags: ['algorithms', 'audio', 'sorting'],
-    runner: sortingVisualizerDemo
+    id: 'chladni-plate',
+    repo: 'cymatics-acoustic-resonance',
+    title: 'Chladni Acoustic Resonance Engine',
+    blurb: '2D acoustic standing wave physics simulation: sound frequencies sculpt 4,500 sand particles into sacred cymatics mandalas.',
+    icon: 'audio',
+    tags: ['physics', 'cymatics', 'audio', 'simulation'],
+    runner: chladniPlateDemo
   },
   {
     id: 'terminal-os',

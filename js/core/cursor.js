@@ -121,8 +121,10 @@ export function initCustomCursor() {
   let isHovering = false;
   let lastShockTime = 0;
   let orbitAngle = 0;
+  let lastMoveTime = performance.now();
 
   window.addEventListener('mousemove', e => {
+    lastMoveTime = performance.now();
     mouseX = e.clientX;
     mouseY = e.clientY;
     dot.style.left = `${mouseX}px`;
@@ -134,6 +136,7 @@ export function initCustomCursor() {
   });
 
   window.addEventListener('mousedown', e => {
+    lastMoveTime = performance.now();
     const ripple = document.createElement('div');
     ripple.className = 'c-ripple';
     ripple.style.left = `${e.clientX}px`;
@@ -144,9 +147,13 @@ export function initCustomCursor() {
 
   // Music beat loop & spring physics
   function loop() {
+    const pulse = music.pulse || { isPlaying: false, kick: 0, snare: 0, bass: 0, energy: 0, hihat: 0 };
+    const now = performance.now();
+    const isIdle = (now - lastMoveTime) > 900;
+
     // Smooth damped spring physics for trailing outer ring
-    const spring = 0.22;
-    const friction = 0.68;
+    const spring = isIdle ? 0.15 : 0.22;
+    const friction = isIdle ? 0.75 : 0.68;
     const ax = (mouseX - ringX) * spring;
     const ay = (mouseY - ringY) * spring;
     ringVx = (ringVx + ax) * friction;
@@ -154,24 +161,37 @@ export function initCustomCursor() {
     ringX += ringVx;
     ringY += ringVy;
 
-    const pulse = music.pulse || { isPlaying: false, kick: 0, snare: 0, bass: 0, energy: 0, hihat: 0 };
-    const musicBoost = pulse.isPlaying ? (pulse.kick * 18 + pulse.bass * 8) : 0;
+    // Idle Dance offsets: when stationary, cursor bobs and grooves to music
+    let danceOffsetX = 0;
+    let danceOffsetY = 0;
+    let idleMusicPulse = 0;
+
+    if (isIdle && pulse.isPlaying && mouseX > 0) {
+      danceOffsetY = Math.sin(pulse.phase * 2.8) * (2.2 + pulse.kick * 4.5);
+      danceOffsetX = Math.cos(pulse.phase * 1.4) * (1.8 + pulse.snare * 3.5);
+      idleMusicPulse = pulse.kick * 12 + Math.sin(pulse.phase * 3) * 3;
+
+      // Micro-vibrate central dot to bass
+      dot.style.left = `${mouseX + danceOffsetX * 0.4}px`;
+      dot.style.top = `${mouseY + danceOffsetY * 0.4}px`;
+    }
+
+    const musicBoost = pulse.isPlaying ? (pulse.kick * 18 + pulse.bass * 8 + idleMusicPulse) : 0;
     const baseSize = isHovering ? 48 : 28;
     const finalSize = baseSize + musicBoost;
 
     ring.style.width = `${finalSize}px`;
     ring.style.height = `${finalSize}px`;
-    ring.style.left = `${ringX}px`;
-    ring.style.top = `${ringY}px`;
+    ring.style.left = `${ringX + danceOffsetX}px`;
+    ring.style.top = `${ringY + danceOffsetY}px`;
 
-    // Emit music beat shockwave on peak kicks
-    const now = performance.now();
-    if (pulse.isPlaying && pulse.kick > 0.72 && (now - lastShockTime > 280)) {
+    // Emit music beat shockwave on peak kicks (especially during idle dance)
+    if (pulse.isPlaying && pulse.kick > 0.68 && (now - lastShockTime > 260)) {
       lastShockTime = now;
       const shock = document.createElement('div');
       shock.className = 'c-shockwave';
-      shock.style.left = `${ringX}px`;
-      shock.style.top = `${ringY}px`;
+      shock.style.left = `${ringX + danceOffsetX}px`;
+      shock.style.top = `${ringY + danceOffsetY}px`;
       document.body.appendChild(shock);
       setTimeout(() => shock.remove(), 380);
 
@@ -180,24 +200,24 @@ export function initCustomCursor() {
       setTimeout(() => { dot.style.backgroundColor = 'var(--accent)'; }, 100);
     }
 
-    if (pulse.isPlaying && pulse.kick > 0.4) {
-      ring.style.boxShadow = `0 0 ${12 + pulse.kick * 20}px var(--accent)`;
+    if (pulse.isPlaying && pulse.kick > 0.35) {
+      ring.style.boxShadow = `0 0 ${12 + pulse.kick * 22}px var(--accent)`;
     } else {
       ring.style.boxShadow = 'none';
     }
 
     // Orbiting mini visualizer satellites around cursor
     if (pulse.isPlaying) {
-      orbitAngle += 0.04 + (pulse.energy * 0.06);
-      const satRadius = (finalSize / 2) + 9 + (pulse.bass * 6);
+      orbitAngle += isIdle ? (0.06 + pulse.energy * 0.08) : (0.04 + pulse.energy * 0.06);
+      const satRadius = (finalSize / 2) + 9 + (pulse.bass * 7);
       satellites.forEach((sat, i) => {
         const theta = orbitAngle + (i * (Math.PI * 2 / 3));
-        const sx = ringX + Math.cos(theta) * satRadius;
-        const sy = ringY + Math.sin(theta) * satRadius;
+        const sx = ringX + danceOffsetX + Math.cos(theta) * satRadius;
+        const sy = ringY + danceOffsetY + Math.sin(theta) * satRadius;
         sat.style.left = `${sx}px`;
         sat.style.top = `${sy}px`;
-        sat.style.opacity = '0.75';
-        const satScale = 0.8 + (pulse.bands ? (pulse.bands[i * 4] || 0) * 0.8 : pulse.kick * 0.6);
+        sat.style.opacity = isIdle ? '0.9' : '0.75';
+        const satScale = (isIdle ? 0.9 : 0.8) + (pulse.bands ? (pulse.bands[i * 4] || 0) * 0.85 : pulse.kick * 0.6);
         sat.style.transform = `translate(-50%, -50%) scale(${satScale})`;
       });
     } else {

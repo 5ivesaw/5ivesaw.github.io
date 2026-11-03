@@ -354,12 +354,19 @@ export default {
       // Music reactive burst
       if (state.musicReactive && music.pulse && music.pulse.isPlaying) {
         beatCounter++;
-        if (music.pulse.kick > 0.6 && beatCounter % 4 === 0) {
-          const x = Math.floor(N * (0.3 + Math.random() * 0.4));
+        const p = music.pulse;
+        if (p.kick > 0.45 && beatCounter % 3 === 0) {
+          const x = Math.floor(N * (0.25 + Math.random() * 0.5));
           const y = N - 3;
           const palette = PALETTES[state.colorMode] || PALETTES.neon;
           const color = palette[Math.floor(Math.random() * palette.length)];
-          injectDye(x, y, (Math.random() - 0.5) * 4, -8 * music.pulse.kick, color);
+          injectDye(x, y, (Math.random() - 0.5) * 6, -10 * p.kick, color);
+        }
+        if (p.snare > 0.55 && beatCounter % 4 === 0) {
+          const x = Math.floor(N * (0.2 + Math.random() * 0.6));
+          const y = Math.floor(N * 0.5);
+          const palette = PALETTES[state.colorMode] || PALETTES.neon;
+          injectDye(x, y, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, palette[0]);
         }
       }
 

@@ -4,6 +4,7 @@ import {
   $, $$, icon, download, toast, onThemeChange
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -79,6 +80,7 @@ export default {
               </div>
 
               <div class="row items-center" style="gap:10px;">
+                <button type="button" id="ctSyncBpmBtn" class="btn sm ghost">📻 Sync to Radio BPM</button>
                 <span class="mono xs faint">TEMPO: <strong id="ctBpmText" style="color:var(--ink);">128 BPM</strong></span>
                 <input type="range" id="ctBpmSlider" min="80" max="180" value="128" style="max-width:120px;" />
               </div>
@@ -239,6 +241,20 @@ export default {
         playBtn.classList.remove('danger');
         $$('.ct-cell', root).forEach(el => el.classList.remove('active-step'));
         sfx('toggleOff');
+      }
+    });
+
+    $('#ctSyncBpmBtn', root).addEventListener('click', () => {
+      const radioBpm = music.pulse?.bpm || (music.track ? 120 : null);
+      if (radioBpm) {
+        state.bpm = Math.min(180, Math.max(80, radioBpm));
+        $('#ctBpmSlider', root).value = state.bpm;
+        $('#ctBpmText', root).textContent = `${state.bpm} BPM (RADIO SYNC)`;
+        toast(`Synced sequencer tempo to radio: ${state.bpm} BPM!`, 'ok');
+        sfx('toggleOn');
+      } else {
+        toast('Start the background radio first to sync tempo!', 'warn');
+        sfx('error');
       }
     });
 

@@ -288,25 +288,33 @@ export default {
       // Compute audio energy
       let bassEnergy = 0;
       let midEnergy = 0;
+      const p = music.pulse || { isPlaying: false, kick: 0, energy: 0, bands: null };
+
       if (state.source === 'mic' && state.analyser) {
         state.analyser.getByteFrequencyData(fftBuf);
         bassEnergy = (fftBuf[2] + fftBuf[4]) / 512;
         midEnergy = (fftBuf[12] + fftBuf[16]) / 512;
       } else {
-        const p = music.pulse || { isPlaying: false, kick: 0, energy: 0 };
         bassEnergy = p.isPlaying ? p.kick : 0;
         midEnergy = p.isPlaying ? p.energy : 0;
       }
 
-      // Generate terrain heights
+      // Generate terrain heights deformed faithfully by frequency bands
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
           const distFromCenter = Math.abs(c - COLS / 2);
-          const mountainWeight = Math.pow(distFromCenter / (COLS / 2), 1.6);
+          const mountainWeight = Math.pow(distFromCenter / (COLS / 2), 1.5);
           const wave1 = Math.sin(c * 0.4 + flightOffset + r * 0.3);
           const wave2 = Math.cos(c * 0.2 - flightOffset * 0.7);
-          const audioSpike = (bassEnergy * 80 + midEnergy * 40) * mountainWeight;
-          terrain[r][c] = (wave1 * 25 + wave2 * 35 + audioSpike) * state.elevation * mountainWeight;
+
+          // Map mountain column to frequency spectrum band
+          const bandIdx = Math.min(15, Math.floor((c / COLS) * 16));
+          const bandVal = (state.source === 'mic' && state.analyser)
+            ? (fftBuf[bandIdx * 4] / 255)
+            : (p.isPlaying && p.bands ? p.bands[bandIdx] : bassEnergy);
+
+          const audioSpike = (bandVal * 110 + bassEnergy * 45) * mountainWeight;
+          terrain[r][c] = (wave1 * 20 + wave2 * 28 + audioSpike) * state.elevation * mountainWeight;
         }
       }
 

@@ -4,6 +4,7 @@ import {
   $, $$, icon, download, copyText, toast, onThemeChange, fitCanvas
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -95,6 +96,7 @@ export default {
               <div class="row wrap" style="gap:8px;">
                 <div class="seg" id="asSourceSeg">
                   <button type="button" data-src="synth" class="bg-paper-elevated font-semibold">Touch Synth</button>
+                  <button type="button" data-src="radio">Radio Stream</button>
                   <button type="button" data-src="mic">Microphone Feed</button>
                 </div>
                 <div class="seg" id="asScopeSeg">
@@ -376,8 +378,15 @@ export default {
         $$('#asSourceSeg button', root).forEach(b => b.classList.toggle('bg-paper-elevated', b === btn));
         if (btn.dataset.src === 'mic') {
           startMic();
+        } else if (btn.dataset.src === 'radio') {
+          stopMic();
+          state.source = 'radio';
+          modeText.textContent = 'RADIO HARMONICS OSCILLOSCOPE';
+          coordText.textContent = 'RADIO STREAM (LIVE)';
+          sfx('toggleOn');
         } else {
           stopMic();
+          state.source = 'synth';
         }
         sfx('tick');
       });
@@ -457,7 +466,27 @@ export default {
       ctx.fillStyle = 'rgba(7, 9, 11, 0.25)';
       ctx.fillRect(0, 0, w, h);
 
-      if (state.analyser) {
+      if (state.source === 'radio') {
+        const pulse = music.pulse;
+        const wave = pulse && pulse.waveform ? pulse.waveform : null;
+        const bands = pulse && pulse.bands ? pulse.bands : null;
+        for (let i = 0; i < 1024; i++) {
+          if (wave && wave.length > 0) {
+            const sample = wave[i % wave.length] || 0;
+            timeData[i] = Math.max(0, Math.min(255, 128 + sample * 110));
+          } else {
+            timeData[i] = 128 + Math.sin(i * 0.05 + phase * 4) * 35 * (pulse ? pulse.kick : 0.3);
+          }
+        }
+        for (let i = 0; i < 512; i++) {
+          if (bands && bands.length > 0) {
+            const b = bands[Math.floor((i / 512) * bands.length)] || 0;
+            freqData[i] = Math.max(0, Math.min(255, b * 255));
+          } else {
+            freqData[i] = Math.max(0, Math.min(255, (pulse ? pulse.kick : 0.2) * 180));
+          }
+        }
+      } else if (state.analyser) {
         state.analyser.getByteTimeDomainData(timeData);
         state.analyser.getByteFrequencyData(freqData);
       } else {

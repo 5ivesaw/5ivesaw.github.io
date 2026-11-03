@@ -4,6 +4,7 @@ import {
   $, $$, icon, download, toast, onThemeChange, fitCanvas
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -300,9 +301,14 @@ export default {
       ctx.shadowColor = theme.glow;
       ctx.shadowBlur = 12;
 
+      const pulse = (music.pulse && music.pulse.isPlaying) ? music.pulse : null;
+      const kick = pulse ? pulse.kick : 0;
+      const bands = pulse ? pulse.bands : null;
+      const pulsePhase = pulse ? pulse.phase : frameCount * 0.04;
+
       if (state.showVisor) {
-        // Cyborg Visor Hexagon Bounding Box
-        const hw = 110, hh = 44;
+        // Cyborg Visor Hexagon Bounding Box - scales to kick
+        const hw = 110 + kick * 12, hh = 44 + kick * 6;
         ctx.beginPath();
         ctx.moveTo(tx - hw, ty - hh);
         ctx.lineTo(tx + hw, ty - hh);
@@ -314,11 +320,26 @@ export default {
         ctx.fill();
         ctx.stroke();
 
-        // Visor crosshairs & targeting brackets
+        // Visor crosshairs & targeting brackets rotating in tempo
+        const arcRadius = 60 + kick * 8;
         ctx.beginPath();
-        ctx.arc(tx, ty, 60, -0.6, 0.6);
-        ctx.arc(tx, ty, 60, Math.PI - 0.6, Math.PI + 0.6);
+        ctx.arc(tx, ty, arcRadius, pulsePhase - 0.6, pulsePhase + 0.6);
+        ctx.arc(tx, ty, arcRadius, pulsePhase + Math.PI - 0.6, pulsePhase + Math.PI + 0.6);
         ctx.stroke();
+
+        // Circular spectrum equalizer brackets around visor lock
+        if (bands && bands.length) {
+          ctx.beginPath();
+          for (let b = 0; b < 16; b++) {
+            const angle = (b / 16) * Math.PI * 2;
+            const bVal = bands[b] || 0;
+            const r1 = arcRadius + 10;
+            const r2 = r1 + bVal * 20;
+            ctx.moveTo(tx + Math.cos(angle) * r1, ty + Math.sin(angle) * r1);
+            ctx.lineTo(tx + Math.cos(angle) * r2, ty + Math.sin(angle) * r2);
+          }
+          ctx.stroke();
+        }
 
         // Reticle ticks
         ctx.beginPath();
@@ -357,7 +378,11 @@ export default {
       ctx.fillStyle = theme.stroke;
       ctx.fillText(`TARGET: [LOCK-ON]`, tx - 80, ty - 65);
       ctx.fillText(`RANGE: ${(1.2 + Math.sin(frameCount * 0.05) * 0.2).toFixed(2)}m`, tx + 40, ty + 75);
-      ctx.fillText(`PULSE: ${72 + Math.floor(Math.sin(frameCount * 0.03) * 6)} BPM`, 20, h - 20);
+      if (pulse) {
+        ctx.fillText(`AUDIO BPM: ${pulse.bpm} [RADIO SYNC ⚡]`, 20, h - 20);
+      } else {
+        ctx.fillText(`PULSE: ${72 + Math.floor(Math.sin(frameCount * 0.03) * 6)} BPM [STANDBY]`, 20, h - 20);
+      }
       ctx.fillText(`SYS: 5IVESAW NEURAL_OS`, w - 160, h - 20);
 
       ctx.restore();

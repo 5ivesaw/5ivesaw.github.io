@@ -240,20 +240,23 @@ export default {
 
       // Music reactive warp factor
       let warpBoost = 1.0;
+      let pKick = 0;
       if (state.musicWarp && music.pulse && music.pulse.isPlaying) {
-        warpBoost = 1.0 + music.pulse.kick * 0.8;
+        pKick = music.pulse.kick;
+        warpBoost = 1.0 + (pKick * 1.5) + (music.pulse.bass * 0.6);
       }
 
       // Draw Black Holes
       for (const bh of state.blackHoles) {
         ctx.save();
         ctx.beginPath();
-        ctx.arc(bh.x, bh.y, 8, 0, Math.PI * 2);
+        const bhRadius = 8 + (pKick * 8);
+        ctx.arc(bh.x, bh.y, bhRadius, 0, Math.PI * 2);
         ctx.fillStyle = '#000000';
         ctx.shadowColor = palette[2];
-        ctx.shadowBlur = 18;
+        ctx.shadowBlur = 18 + (pKick * 16);
         ctx.fill();
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 + (pKick * 2);
         ctx.strokeStyle = palette[0];
         ctx.stroke();
         ctx.restore();

@@ -5,6 +5,7 @@ import {
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
 import { palette, rgba } from './_kit.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -335,11 +336,14 @@ export default {
         sampleData = sampleCtx.getImageData(0, 0, colsCount, rowsCount).data;
       }
 
+      const pulse = music.pulse || { isPlaying: false, kick: 0, hihat: 0 };
+      const musicSpeedBoost = (pulse.isPlaying ? (pulse.kick * 0.9 + pulse.hihat * 0.4) : 0);
+
       for (let c = 0; c < colsCount; c++) {
         const col = columns[c];
         if (!col) continue;
 
-        col.y += col.speed;
+        col.y += col.speed * (1 + musicSpeedBoost);
         if (col.y > rowsCount + 10) {
           col.y = -Math.random() * 15;
           col.speed = (0.7 + Math.random() * 0.8) * state.speed;
@@ -376,7 +380,8 @@ export default {
             const wave = Math.sin(dist * 0.2 - procTime * 2);
             const angle = Math.atan2(dy, dx);
             const petal = Math.cos(angle * 5 + procTime);
-            lum = Math.max(0, (wave + petal * 0.5) * 0.7);
+            const musicKickBoost = pulse.isPlaying ? (pulse.kick * 0.55) : 0;
+            lum = Math.max(0, (wave + petal * 0.5 + musicKickBoost) * 0.7);
           }
 
           // Mouse disruption radius

@@ -4,6 +4,7 @@ import {
   $, $$, icon, download, toast, onThemeChange, fitCanvas
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
+import { music } from '../core/music.js';
 
 export default {
   mount(root, api) {
@@ -51,7 +52,7 @@ export default {
             <div id="rmScreenBox" class="rm-screen">
               <div class="rm-hud">
                 <span class="badge" style="background:rgba(0,0,0,0.85);color:var(--accent);border:1px solid var(--line);">
-                  ALGORITHM: <strong>SPHERE TRACING (SDF)</strong>
+                  ALGORITHM: <strong>SPHERE TRACING (SDF)</strong> · AUDIO: <strong id="rmPulseIndicator" style="color:#00F0FF;">PULSE SYNC</strong>
                 </span>
               </div>
               <canvas id="rmCanvas"></canvas>
@@ -120,6 +121,8 @@ export default {
       uniform vec2 u_mouse;
       uniform int u_shape;
       uniform int u_color;
+      uniform float u_music_kick;
+      uniform float u_music_bass;
 
       mat2 rot(float a) {
         float s = sin(a), c = cos(a);
@@ -136,23 +139,24 @@ export default {
         p.yz *= rot(u_mouse.y * 3.0);
 
         if (u_shape == 1) {
-          // Gyroid
-          return (abs(dot(sin(p * 2.0), cos(p.zxy * 2.0))) - 0.2) * 0.5;
+          // Gyroid - modulates with music kick
+          float freq = 2.0 + u_music_kick * 0.4;
+          return (abs(dot(sin(p * freq), cos(p.zxy * freq))) - (0.2 + u_music_bass * 0.08)) * 0.5;
         } else if (u_shape == 2) {
-          // Twisted Torus
-          p.xz *= rot(p.y * 0.8 + u_time);
-          vec2 q = vec2(length(p.xz) - 1.2, p.y);
+          // Twisted Torus - ripples with tempo
+          p.xz *= rot(p.y * 0.8 + u_time * 1.2 + u_music_kick * 0.5);
+          vec2 q = vec2(length(p.xz) - (1.2 + u_music_bass * 0.15), p.y);
           return length(q) - 0.45;
         } else {
-          // Julia / Mandelbulb fractal fold
+          // Julia / Mandelbulb fractal fold - dynamically pulses with music harmonics
           float scale = 1.0;
           for (int i = 0; i < 4; i++) {
             p = abs(p) - vec3(0.5, 0.5, 0.5);
             p.xy *= rot(0.5);
-            p.xz *= rot(0.3 + sin(u_time * 0.4) * 0.2);
+            p.xz *= rot(0.3 + sin(u_time * 0.4) * 0.2 + u_music_kick * 0.35);
             float d = dot(p, p);
-            p *= 1.4;
-            scale *= 1.4;
+            p *= (1.4 + u_music_bass * 0.06);
+            scale *= (1.4 + u_music_bass * 0.06);
           }
           return (length(p) - 1.2) / scale;
         }
@@ -186,13 +190,13 @@ export default {
           vec3 n = calcNormal(p);
           vec3 light = normalize(vec3(1.0, 2.0, -2.0));
           float diff = max(dot(n, light), 0.1);
-          float spec = pow(max(dot(reflect(-light, n), -rd), 0.0), 16.0);
+          float spec = pow(max(dot(reflect(-light, n), -rd), 0.0), 16.0) * (1.0 + u_music_kick * 0.7);
 
           vec3 baseColor = vec3(0.9, 0.2, 0.6); // Neon
           if (u_color == 1) baseColor = vec3(0.0, 0.85, 1.0); // Cyber
           else if (u_color == 2) baseColor = vec3(1.0, 0.23, 0.08); // Crimson
 
-          col = baseColor * diff + vec3(spec);
+          col = (baseColor + vec3(u_music_kick * 0.2)) * diff + vec3(spec);
           col *= exp(-0.08 * dO); // depth fog
         }
 
@@ -228,6 +232,8 @@ export default {
     const uMouse = gl.getUniformLocation(prog, 'u_mouse');
     const uShape = gl.getUniformLocation(prog, 'u_shape');
     const uColor = gl.getUniformLocation(prog, 'u_color');
+    const uMusicKick = gl.getUniformLocation(prog, 'u_music_kick');
+    const uMusicBass = gl.getUniformLocation(prog, 'u_music_bass');
 
     function resize() {
       fitCanvas(canvas);
@@ -280,14 +286,25 @@ export default {
       sfx('download');
     });
 
+    const pulseBadge = $('#rmPulseIndicator', root);
     let startTime = performance.now();
 
     function render() {
       const now = (performance.now() - startTime) / 1000;
+      const kick = (music.pulse && music.pulse.isPlaying) ? music.pulse.kick : 0;
+      const bass = (music.pulse && music.pulse.isPlaying) ? music.pulse.bass : 0;
+
       gl.uniform1f(uTime, now);
       gl.uniform2f(uMouse, state.rotX, state.rotY);
       gl.uniform1i(uShape, state.shape === 'gyroid' ? 1 : (state.shape === 'torus' ? 2 : 0));
       gl.uniform1i(uColor, state.palette === 'cyber' ? 1 : (state.palette === 'crimson' ? 2 : 0));
+      gl.uniform1f(uMusicKick, kick);
+      gl.uniform1f(uMusicBass, bass);
+
+      if (pulseBadge && music.pulse) {
+        pulseBadge.textContent = music.pulse.isPlaying ? 'PULSE ACTIVE ⚡' : 'STANDBY';
+        pulseBadge.style.color = music.pulse.isPlaying ? '#00F0FF' : 'var(--faint)';
+      }
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       state.animId = requestAnimationFrame(render);
