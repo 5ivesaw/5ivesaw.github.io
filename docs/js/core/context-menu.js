@@ -24,6 +24,11 @@ export function initContextMenu() {
       playText.textContent = music.state === 'playing' ? 'Pause Radio' : 'Resume Radio';
     }
 
+    const liveText = $('#ctxLiveAudioText');
+    if (liveText) {
+      liveText.textContent = music.isHardwareLive ? 'Disable Live Audio' : 'Live Audio Sync (Mic)';
+    }
+
     // Position menu clamped to window
     const menuW = 210;
     const menuH = 220;
@@ -46,7 +51,7 @@ export function initContextMenu() {
     if (e.key === 'Escape') menu.classList.add('hidden');
   });
 
-  menu.addEventListener('click', e => {
+  menu.addEventListener('click', async e => {
     const item = e.target.closest('[data-action]');
     if (!item) return;
     const action = item.dataset.action;
@@ -61,6 +66,11 @@ export function initContextMenu() {
         music.next();
         toast('Skipped to next track', 'ok');
         sfx('click');
+        break;
+      case 'toggle-live-audio':
+        const activeLive = await music.toggleHardwareAudio();
+        toast(activeLive ? '🎤 Live Hardware Audio Connected!' : 'Switched to Streaming Audio Sync', 'ok');
+        sfx('toggleOn');
         break;
       case 'open-cmd':
         $('#openCmdPaletteBtn')?.click();

@@ -720,7 +720,10 @@
       </div>
 
       <!-- Right Volume & Queue Toggle -->
-      <div class="row" style="gap:8px;flex:1 1 180px;justify-content:flex-end;">
+      <div class="row" style="gap:8px;flex:1 1 210px;justify-content:flex-end;">
+        <button type="button" id="dockLiveAudioBtn" class="btn sm ghost" title="Enable Live Hardware Audio / Mic Spectrum" style="padding:0 8px;height:28px;font-size:11px;font-family:var(--font-mono);gap:4px;">
+          <span>🎤</span> <span class="hidden sm:inline">Live Audio</span>
+        </button>
         <button type="button" id="dockMuteBtn" class="btn sm icon ghost" title="Mute"><span data-icon="vol"></span></button>
         <input type="range" id="dockVolSlider" min="0" max="100" value="45" style="max-width:80px;" title="Volume" />
         <button type="button" id="dockQueueToggle" class="btn sm icon ghost" title="Queue / Playlist"><span data-icon="list"></span></button>
@@ -841,6 +844,10 @@
     <div class="context-menu-item" data-action="next-track">
       <span class="context-icon">⏭</span>
       <span>Next Track</span>
+    </div>
+    <div class="context-menu-item" data-action="toggle-live-audio">
+      <span class="context-icon">🎤</span>
+      <span id="ctxLiveAudioText">Live Audio Sync (Mic)</span>
     </div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item" data-action="open-cmd">

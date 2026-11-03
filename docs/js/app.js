@@ -9,6 +9,7 @@ import { TOOLS, DEMOS } from './registry.js';
 import fiveTube from './tube/5tube.js';
 import { initContextMenu } from './core/context-menu.js';
 import { initCustomCursor } from './core/cursor.js';
+import { initMusicVibeReactor } from './core/vibe-reactor.js';
 
 // SVG icons for languages
 const LANG_ICONS = {
@@ -1597,10 +1598,11 @@ function initMusicDock() {
   music.on('pulse', p => {
     if (eqBars && eqBars.length) {
       if (p.isPlaying) {
-        eqBars[0].style.height = `${4 + p.kick * 14}px`;
-        eqBars[1].style.height = `${6 + p.energy * 12}px`;
-        eqBars[2].style.height = `${5 + p.snare * 14}px`;
-        eqBars[3].style.height = `${4 + p.bass * 16}px`;
+        const b = p.bands || [p.kick, p.bass, p.snare, p.energy];
+        eqBars[0].style.height = `${4 + (b[1] || p.kick) * 15}px`;
+        eqBars[1].style.height = `${5 + (b[4] || p.bass) * 14}px`;
+        eqBars[2].style.height = `${4 + (b[7] || p.snare) * 15}px`;
+        eqBars[3].style.height = `${3 + (b[13] || p.hihat || p.energy) * 16}px`;
       } else {
         eqBars[0].style.height = '4px';
         eqBars[1].style.height = '6px';
@@ -1622,6 +1624,36 @@ function initMusicDock() {
   });
 
   // Dock interactions
+  const liveAudioBtn = $('#dockLiveAudioBtn');
+  if (liveAudioBtn) {
+    liveAudioBtn.addEventListener('click', async () => {
+      const active = await music.toggleHardwareAudio();
+      liveAudioBtn.classList.toggle('primary', active);
+      if (active) {
+        liveAudioBtn.style.background = 'var(--accent)';
+        liveAudioBtn.style.color = '#fff';
+        toast('🎤 Live Hardware Audio Connected! Reactors now reading literal sound frequencies!', 'ok');
+        sfx('toggleOn');
+      } else {
+        liveAudioBtn.style.background = '';
+        liveAudioBtn.style.color = '';
+        toast('Switched back to Streaming Audio Sync', 'ok');
+        sfx('toggleOff');
+      }
+    });
+
+    music.on('hardware-audio', active => {
+      liveAudioBtn.classList.toggle('primary', active);
+      if (active) {
+        liveAudioBtn.style.background = 'var(--accent)';
+        liveAudioBtn.style.color = '#fff';
+      } else {
+        liveAudioBtn.style.background = '';
+        liveAudioBtn.style.color = '';
+      }
+    });
+  }
+
   playBtn.addEventListener('click', () => { music.toggle(); sfx('click'); });
   prevBtn.addEventListener('click', () => { music.prev(); sfx('click'); });
   nextBtn.addEventListener('click', () => { music.next(); sfx('click'); });
@@ -1828,6 +1860,7 @@ async function initApp() {
   // Initialize interactive cursor & context menu
   initCustomCursor();
   initContextMenu();
+  initMusicVibeReactor();
 
   // 1. Mount instant static tools & demos IMMEDIATELY without waiting for network
   renderToolsGrid();

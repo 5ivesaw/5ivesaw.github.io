@@ -1,5 +1,5 @@
 // Music-Reactive Custom Cursor Engine — by 5IVESAW
-// Precision pointer with trailing spring aura, click ripple pings & audio beat thumping.
+// Precision pointer with trailing spring aura, orbital music visualizer satellites, click ripples & beat shockwaves.
 import { music } from './music.js';
 
 export function initCustomCursor() {
@@ -25,8 +25,8 @@ export function initCustomCursor() {
       pointer-events: none;
       z-index: 99999;
       transform: translate(-50%, -50%);
-      transition: transform 0.05s ease-out, background-color 0.2s ease;
-      box-shadow: 0 0 6px var(--accent);
+      transition: transform 0.05s ease-out, background-color 0.12s ease;
+      box-shadow: 0 0 8px var(--accent);
     }
     .c-ring {
       position: fixed;
@@ -39,28 +39,57 @@ export function initCustomCursor() {
       pointer-events: none;
       z-index: 99998;
       transform: translate(-50%, -50%);
-      opacity: 0.6;
-      transition: width 0.22s var(--ease-spring), height 0.22s var(--ease-spring), border-color 0.2s ease, opacity 0.2s ease;
+      opacity: 0.65;
+      transition: width 0.18s var(--ease-spring), height 0.18s var(--ease-spring), border-color 0.2s ease, opacity 0.2s ease;
     }
     .c-ring.hovering {
       width: 48px;
       height: 48px;
       background: rgba(255, 59, 20, 0.08);
       border-color: var(--ink);
-      opacity: 0.9;
+      opacity: 0.95;
     }
-    .c-ripple {
+    .c-satellites {
       position: fixed;
-      border-radius: 50%;
-      border: 1.5px solid var(--accent);
+      top: 0;
+      left: 0;
+      width: 1px;
+      height: 1px;
       pointer-events: none;
       z-index: 99997;
+    }
+    .c-sat-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
       transform: translate(-50%, -50%);
-      animation: cRippleAnim 0.45s ease-out forwards;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .c-ripple, .c-shockwave {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 99996;
+      transform: translate(-50%, -50%);
+    }
+    .c-ripple {
+      border: 1.5px solid var(--accent);
+      animation: cRippleAnim 0.45s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+    }
+    .c-shockwave {
+      border: 1px dashed var(--accent);
+      animation: cShockwaveAnim 0.38s ease-out forwards;
     }
     @keyframes cRippleAnim {
       0% { width: 10px; height: 10px; opacity: 1; }
-      100% { width: 64px; height: 64px; opacity: 0; }
+      100% { width: 68px; height: 68px; opacity: 0; }
+    }
+    @keyframes cShockwaveAnim {
+      0% { width: 28px; height: 28px; opacity: 0.85; transform: translate(-50%, -50%) rotate(0deg); }
+      100% { width: 84px; height: 84px; opacity: 0; transform: translate(-50%, -50%) rotate(45deg); }
     }
   `;
   document.head.appendChild(style);
@@ -69,12 +98,29 @@ export function initCustomCursor() {
   dot.className = 'c-dot';
   const ring = document.createElement('div');
   ring.className = 'c-ring';
+  const satHost = document.createElement('div');
+  satHost.className = 'c-satellites';
+
+  const satellites = [
+    document.createElement('div'),
+    document.createElement('div'),
+    document.createElement('div')
+  ];
+  satellites.forEach(s => {
+    s.className = 'c-sat-dot';
+    satHost.appendChild(s);
+  });
+
   document.body.appendChild(dot);
   document.body.appendChild(ring);
+  document.body.appendChild(satHost);
 
   let mouseX = -100, mouseY = -100;
   let ringX = -100, ringY = -100;
+  let ringVx = 0, ringVy = 0;
   let isHovering = false;
+  let lastShockTime = 0;
+  let orbitAngle = 0;
 
   window.addEventListener('mousemove', e => {
     mouseX = e.clientX;
@@ -96,14 +142,20 @@ export function initCustomCursor() {
     setTimeout(() => ripple.remove(), 450);
   });
 
-  // Music beat loop
+  // Music beat loop & spring physics
   function loop() {
-    // Spring interpolation for outer ring
-    ringX += (mouseX - ringX) * 0.2;
-    ringY += (mouseY - ringY) * 0.2;
+    // Smooth damped spring physics for trailing outer ring
+    const spring = 0.22;
+    const friction = 0.68;
+    const ax = (mouseX - ringX) * spring;
+    const ay = (mouseY - ringY) * spring;
+    ringVx = (ringVx + ax) * friction;
+    ringVy = (ringVy + ay) * friction;
+    ringX += ringVx;
+    ringY += ringVy;
 
-    const pulse = music.pulse || { isPlaying: false, kick: 0, energy: 0 };
-    const musicBoost = pulse.isPlaying ? (pulse.kick * 14) : 0;
+    const pulse = music.pulse || { isPlaying: false, kick: 0, snare: 0, bass: 0, energy: 0, hihat: 0 };
+    const musicBoost = pulse.isPlaying ? (pulse.kick * 18 + pulse.bass * 8) : 0;
     const baseSize = isHovering ? 48 : 28;
     const finalSize = baseSize + musicBoost;
 
@@ -112,10 +164,44 @@ export function initCustomCursor() {
     ring.style.left = `${ringX}px`;
     ring.style.top = `${ringY}px`;
 
-    if (pulse.isPlaying && pulse.kick > 0.5) {
-      ring.style.boxShadow = `0 0 ${12 + pulse.kick * 16}px var(--accent)`;
+    // Emit music beat shockwave on peak kicks
+    const now = performance.now();
+    if (pulse.isPlaying && pulse.kick > 0.72 && (now - lastShockTime > 280)) {
+      lastShockTime = now;
+      const shock = document.createElement('div');
+      shock.className = 'c-shockwave';
+      shock.style.left = `${ringX}px`;
+      shock.style.top = `${ringY}px`;
+      document.body.appendChild(shock);
+      setTimeout(() => shock.remove(), 380);
+
+      // Flash central dot on snare/drop
+      dot.style.backgroundColor = pulse.snare > 0.5 ? '#ffffff' : 'var(--accent)';
+      setTimeout(() => { dot.style.backgroundColor = 'var(--accent)'; }, 100);
+    }
+
+    if (pulse.isPlaying && pulse.kick > 0.4) {
+      ring.style.boxShadow = `0 0 ${12 + pulse.kick * 20}px var(--accent)`;
     } else {
       ring.style.boxShadow = 'none';
+    }
+
+    // Orbiting mini visualizer satellites around cursor
+    if (pulse.isPlaying) {
+      orbitAngle += 0.04 + (pulse.energy * 0.06);
+      const satRadius = (finalSize / 2) + 9 + (pulse.bass * 6);
+      satellites.forEach((sat, i) => {
+        const theta = orbitAngle + (i * (Math.PI * 2 / 3));
+        const sx = ringX + Math.cos(theta) * satRadius;
+        const sy = ringY + Math.sin(theta) * satRadius;
+        sat.style.left = `${sx}px`;
+        sat.style.top = `${sy}px`;
+        sat.style.opacity = '0.75';
+        const satScale = 0.8 + (pulse.bands ? (pulse.bands[i * 4] || 0) * 0.8 : pulse.kick * 0.6);
+        sat.style.transform = `translate(-50%, -50%) scale(${satScale})`;
+      });
+    } else {
+      satellites.forEach(sat => { sat.style.opacity = '0'; });
     }
 
     requestAnimationFrame(loop);
