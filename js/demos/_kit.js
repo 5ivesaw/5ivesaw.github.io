@@ -149,9 +149,17 @@ export function typing(e) {
   return false;
 }
 
-const pc = document.createElement('canvas').getContext('2d');
+let _pc;
+function getPc() {
+  if (!_pc && typeof document !== 'undefined') {
+    _pc = document.createElement('canvas').getContext('2d');
+  }
+  return _pc;
+}
 /** Parse any CSS colour into [r,g,b,a]. */
 export function rgbOf(c) {
+  const pc = getPc();
+  if (!pc) return [0, 0, 0, 1];
   pc.fillStyle = '#000'; pc.fillStyle = c || '#000';
   const v = pc.fillStyle;
   if (v[0] === '#') return [parseInt(v.slice(1, 3), 16), parseInt(v.slice(3, 5), 16), parseInt(v.slice(5, 7), 16), 1];

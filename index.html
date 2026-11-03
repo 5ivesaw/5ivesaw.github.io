@@ -11,6 +11,11 @@
   <meta property="og:url" content="https://5ivesaw.github.io/" />
   <link rel="canonical" href="https://5ivesaw.github.io/" />
   <link rel="icon" type="image/png" href="./img/favicon.png" />
+  <script>
+    if (location.hostname === '5ivesaw.github.io' && location.pathname.startsWith('/5ivesaw')) {
+      location.replace('https://5ivesaw.github.io/' + location.search + location.hash);
+    }
+  </script>
 
   <!-- Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -236,7 +241,7 @@
   <!-- Fixed Topbar -->
   <header id="topbar">
     <div class="topbar-bar">
-      <!-- Left: Socials & Search -->
+      <!-- Left: Socials & Navigation -->
       <div class="nav-pill" style="gap:2px;">
         <button type="button" id="socialsMenuBtn" class="btn sm ghost" title="Socials Launcher">
           <span class="dot" style="width:6px;height:6px;"></span>
@@ -245,6 +250,11 @@
         <button type="button" id="openCmdPaletteBtn" class="btn sm ghost" title="Command Palette (Ctrl+K)">
           <kbd>⌘K</kbd>
         </button>
+        <span style="width:1px;height:18px;background:var(--line);margin:0 2px;"></span>
+        <a href="#toolsSection" class="btn sm ghost mono xs" style="padding:0 6px;" title="Jump to in-browser creative tools">Tools</a>
+        <a href="#demosSection" class="btn sm ghost mono xs" style="padding:0 6px;" title="Jump to interactive demos">Demos</a>
+        <a href="#reposSection" class="btn sm ghost mono xs" style="padding:0 6px;" title="Jump to repositories">Repos</a>
+        <a href="#/5tube" class="btn sm mono xs font-bold" style="background:#FF0000;color:#fff;border-radius:var(--r-full);padding:2px 8px;margin-left:2px;box-shadow:0 2px 8px rgba(255,0,0,0.35);" title="5Tube: Synchronized Multiplayer YouTube Theater">▶ 5Tube</a>
       </div>
 
       <!-- Center: Repos Overview Scroller -->
@@ -361,6 +371,9 @@
 
           <!-- Quick Actions -->
           <div class="row wrap center" style="gap:8px;margin-top:6px;">
+            <a href="#/5tube" class="btn sm primary" style="background:#FF0000;border-color:#FF0000;box-shadow:0 3px 12px rgba(255,0,0,0.35);">
+              <span>▶ Launch 5Tube Party</span>
+            </a>
             <div class="well row xs mono" style="padding:4px 12px;border-radius:var(--r-full);">
               <span class="accent font-bold">$</span>
               <span class="text-paper-ink">gh repo clone 5ivesaw/Sawbyte</span>
@@ -385,7 +398,70 @@
             Convert, cut, edit, and inspect directly on your device. Zero cloud uploads, zero tracking.
           </p>
         </div>
-        <div id="toolsGrid" class="grid grid-2"></div>
+        <div id="toolsGrid" class="grid grid-2">
+          <!-- 1. Image Studio -->
+          <a href="#/tools/image" class="tile hover pop-in" style="padding:16px;">
+            <div class="row between">
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">🖼️ TOOL</span>
+              <span class="accent font-medium text-xs">Launch Studio ↗</span>
+            </div>
+            <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Image Studio</h3>
+            <p class="xs muted clamp-2">Convert, resize, crop, rotate &amp; filter images. Batch export to PNG, JPEG, WebP or AVIF.</p>
+            <div class="row wrap xs mono faint" style="margin-top:auto;gap:4px;">
+              <span class="chip xs" style="padding:2px 7px;">#convert</span>
+              <span class="chip xs" style="padding:2px 7px;">#crop</span>
+              <span class="chip xs" style="padding:2px 7px;">#resize</span>
+              <span class="chip xs" style="padding:2px 7px;">#batch</span>
+            </div>
+          </a>
+
+          <!-- 2. Audio Cutter -->
+          <a href="#/tools/audio" class="tile hover pop-in" style="padding:16px;">
+            <div class="row between">
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">🎵 TOOL</span>
+              <span class="accent font-medium text-xs">Launch Cutter ↗</span>
+            </div>
+            <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Audio Cutter</h3>
+            <p class="xs muted clamp-2">Waveform editor. Trim, fade, normalise, change speed, then export WAV, MP3 or WebM.</p>
+            <div class="row wrap xs mono faint" style="margin-top:auto;gap:4px;">
+              <span class="chip xs" style="padding:2px 7px;">#cut</span>
+              <span class="chip xs" style="padding:2px 7px;">#trim</span>
+              <span class="chip xs" style="padding:2px 7px;">#fade</span>
+              <span class="chip xs" style="padding:2px 7px;">#convert</span>
+            </div>
+          </a>
+
+          <!-- 3. Video Cutter -->
+          <a href="#/tools/video" class="tile hover pop-in" style="padding:16px;">
+            <div class="row between">
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">🎬 TOOL</span>
+              <span class="accent font-medium text-xs">Launch Cutter ↗</span>
+            </div>
+            <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Video Cutter</h3>
+            <p class="xs muted clamp-2">Trim, crop, mute and convert video to WebM or audio extract, all inside your browser.</p>
+            <div class="row wrap xs mono faint" style="margin-top:auto;gap:4px;">
+              <span class="chip xs" style="padding:2px 7px;">#cut</span>
+              <span class="chip xs" style="padding:2px 7px;">#convert</span>
+              <span class="chip xs" style="padding:2px 7px;">#audio</span>
+            </div>
+          </a>
+
+          <!-- 4. Dev Toolkit -->
+          <a href="#/tools/dev" class="tile hover pop-in" style="padding:16px;">
+            <div class="row between">
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">⚡ TOOL</span>
+              <span class="accent font-medium text-xs">Launch Toolkit ↗</span>
+            </div>
+            <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Dev Toolkit</h3>
+            <p class="xs muted clamp-2">JSON, Base64, URL, hashes, UUIDs, timestamps, colours &amp; text case. The everyday stuff.</p>
+            <div class="row wrap xs mono faint" style="margin-top:auto;gap:4px;">
+              <span class="chip xs" style="padding:2px 7px;">#json</span>
+              <span class="chip xs" style="padding:2px 7px;">#base64</span>
+              <span class="chip xs" style="padding:2px 7px;">#hash</span>
+              <span class="chip xs" style="padding:2px 7px;">#color</span>
+            </div>
+          </a>
+        </div>
       </section>
 
       <!-- 3. INTERACTIVE REPOSITORY DEMOS (The 3 Flagship Demos) -->
@@ -397,7 +473,37 @@
             Real working browser adaptations of 5ivesaw's core engineering repositories.
           </p>
         </div>
-        <div id="demosGrid" class="grid grid-3"></div>
+        <div id="demosGrid" class="grid grid-3">
+          <!-- 1. A* Pathfinder -->
+          <a href="#/demos/pathfinder" class="tile hover pop-in" style="padding:16px;">
+            <div class="row between">
+              <span class="badge" style="font-size:9px;">fivesawUtils</span>
+              <span class="accent font-medium text-xs">Run Demo ↗</span>
+            </div>
+            <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">A* Pathfinder</h3>
+            <p class="xs muted clamp-2">The fivesawUtils A* idea on a 2D grid: paint walls, drag endpoints, and watch it search with humanized spline smoothing.</p>
+          </a>
+
+          <!-- 2. ASCII Media Player -->
+          <a href="#/demos/ascii-player" class="tile hover pop-in" style="padding:16px;">
+            <div class="row between">
+              <span class="badge" style="font-size:9px;">Ascii-Media-Player</span>
+              <span class="accent font-medium text-xs">Run Demo ↗</span>
+            </div>
+            <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">ASCII Media Player</h3>
+            <p class="xs muted clamp-2">Drop in a local audio file or use your mic and watch it play back as a live ASCII terminal spectrum.</p>
+          </a>
+
+          <!-- 3. Cursed Text Renderer -->
+          <a href="#/demos/bad-apple" class="tile hover pop-in" style="padding:16px;">
+            <div class="row between">
+              <span class="badge" style="font-size:9px;">a-apple-that-is-bad</span>
+              <span class="accent font-medium text-xs">Run Demo ↗</span>
+            </div>
+            <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Cursed Text Renderer</h3>
+            <p class="xs muted clamp-2">Turns webcam or video into FiveSaw-flavoured cursed text art in real time.</p>
+          </a>
+        </div>
       </section>
 
       <!-- 4. REPOSITORY WORKSPACES (With search, filters, flagship view) -->
