@@ -145,9 +145,10 @@ function escapeHtml(str) {
   return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function renderMarkdown(md) {
+function renderMarkdown(md, repo = null) {
   if (!md) return '<p class="muted italic">No README content available.</p>';
   let text = md.replace(/\r\n/g, '\n');
+  const rawBase = repo ? `https://raw.githubusercontent.com/5ivesaw/${repo.name}/${repo.branch || 'main'}/` : '';
 
   // Fenced code blocks
   const codeBlocks = [];
@@ -168,8 +169,23 @@ function renderMarkdown(md) {
   text = text.replace(/^## (.*$)/gim, '<h2 class="font-bold serif text-2xl mt-8 mb-3 text-paper-ink border-b border-paper-line pb-1">$1</h2>');
   text = text.replace(/^# (.*$)/gim, '<h1 class="font-bold serif text-3xl mt-6 mb-4 text-paper-ink border-b border-paper-line pb-2">$1</h1>');
 
-  // Images
-  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="my-4 max-w-full rounded border border-paper-line" loading="lazy" />');
+  // Resolve HTML <img> tags with relative paths
+  text = text.replace(/<img([^>]+)src=["']([^"']+)["']([^>]*)>/gi, (match, pre, src, post) => {
+    let finalSrc = src.trim();
+    if (rawBase && !finalSrc.startsWith('http://') && !finalSrc.startsWith('https://') && !finalSrc.startsWith('data:')) {
+      finalSrc = rawBase + finalSrc.replace(/^\.\//, '').replace(/^\//, '');
+    }
+    return `<img${pre}src="${finalSrc}"${post} class="my-4 max-w-full rounded border border-paper-line" loading="lazy" />`;
+  });
+
+  // Resolve Markdown images ![alt](src)
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
+    let finalSrc = src.trim();
+    if (rawBase && !finalSrc.startsWith('http://') && !finalSrc.startsWith('https://') && !finalSrc.startsWith('data:')) {
+      finalSrc = rawBase + finalSrc.replace(/^\.\//, '').replace(/^\//, '');
+    }
+    return `<img src="${finalSrc}" alt="${alt}" class="my-4 max-w-full rounded border border-paper-line" loading="lazy" />`;
+  });
 
   // Links
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="accent underline font-medium hover:text-paper-ink">$1 ↗</a>');
@@ -190,7 +206,7 @@ function renderMarkdown(md) {
   text = paragraphs.map(p => {
     p = p.trim();
     if (!p) return '';
-    if (p.startsWith('<h') || p.startsWith('<pre') || p.startsWith('<blockquote') || p.startsWith('<li') || p.startsWith('<!--CODEBLOCK')) {
+    if (p.startsWith('<h') || p.startsWith('<pre') || p.startsWith('<blockquote') || p.startsWith('<li') || p.startsWith('<!--CODEBLOCK') || p.startsWith('<img') || p.startsWith('<p')) {
       return p;
     }
     return `<p class="my-2.5 text-sm leading-relaxed text-paper-ink">${p.replace(/\n/g, '<br/>')}</p>`;
@@ -248,38 +264,35 @@ function renderRepoPage(repoName, mountPoint) {
       
       <!-- 1. Hero Workspace Card -->
       <section class="card pad repo-hero-card">
-        <div class="row between wrap items-start" style="gap:16px;">
-          <div class="row items-start" style="gap:16px;flex:1 1 480px;min-width:0;">
+        <div class="repo-header-top">
+          <div class="repo-header-main">
             <div class="repo-avatar-box">
-              ${repo.icon ? `<img src="${repo.icon}" alt="" class="w-16 h-16 object-contain rounded-lg"/>` : `<div class="w-16 h-16 rounded-lg bg-paper-surface border border-paper-line flex items-center justify-center">${getLangIcon(repo.lang)}</div>`}
+              ${repo.icon ? `<img src="${repo.icon}" alt="${repo.name}" onerror="this.parentElement.innerHTML='${getLangIcon(repo.lang)}'"/>` : getLangIcon(repo.lang)}
             </div>
-            <div class="stack" style="gap:6px;min-width:0;flex:1 1 0;">
-              <div class="row wrap items-center" style="gap:8px;">
-                <span class="badge" style="font-size:10px;">5ivesaw /</span>
-                <h1 class="text-2xl font-bold mono text-paper-ink" style="letter-spacing:-0.03em;">${repo.name}</h1>
-                <button type="button" id="copyRepoNameBtn" class="btn sm ghost" title="Copy repository name" style="padding:2px 8px;">
+            <div class="repo-header-text">
+              <div class="repo-title-row">
+                <span class="badge" style="font-size:10.5px;">5ivesaw /</span>
+                <h1 class="repo-title">${repo.name}</h1>
+                <button type="button" id="copyRepoNameBtn" class="btn sm ghost" title="Copy repository name" style="padding:2px 8px;height:24px;">
                   ${icon('copy')}
                 </button>
                 <span class="badge" style="background:var(--elevated);font-size:9.5px;">${repo.fork ? 'Fork' : 'Public'}</span>
               </div>
-              <p class="muted text-sm" style="line-height:1.5;">${repo.desc || repo.readme || 'No description provided for this repository.'}</p>
+              <p class="repo-desc">${repo.desc || repo.readme || 'Public repository by @5ivesaw.'}</p>
               
-              <!-- Meta Badges -->
-              <div class="row wrap items-center xs mono faint" style="gap:8px;margin-top:4px;">
-                <span class="row items-center" style="gap:4px;">${getLangIcon(repo.lang)} <strong style="color:var(--ink);">${repo.lang || 'Code'}</strong></span>
-                <span>•</span>
-                <span>★ <strong>${repo.stars || 0}</strong> stars</span>
-                <span>•</span>
-                <span>⑂ <strong>${repo.forks || 0}</strong> forks</span>
-                <span>•</span>
-                <span>⎇ <strong>${repo.branch || 'main'}</strong></span>
-                ${repo.pushed ? `<span>•</span><span>Pushed <strong>${new Date(repo.pushed).toLocaleDateString()}</strong></span>` : ''}
+              <!-- Meta Chips -->
+              <div class="repo-meta-chips">
+                <span class="chip xs font-mono">${getLangIcon(repo.lang)} <strong style="color:var(--ink);">${repo.lang || 'Code'}</strong></span>
+                <span class="chip xs font-mono">★ <strong style="color:var(--ink);">${repo.stars || 0}</strong> stars</span>
+                <span class="chip xs font-mono">⑂ <strong style="color:var(--ink);">${repo.forks || 0}</strong> forks</span>
+                <span class="chip xs font-mono">⎇ <strong style="color:var(--ink);">${repo.branch || 'main'}</strong></span>
+                ${repo.pushed ? `<span class="chip xs font-mono">Pushed <strong style="color:var(--ink);">${new Date(repo.pushed).toLocaleDateString()}</strong></span>` : ''}
               </div>
             </div>
           </div>
 
           <!-- Quick Actions -->
-          <div class="row wrap items-center" style="gap:8px;flex-shrink:0;">
+          <div class="repo-header-actions">
             <a href="https://github.com/5ivesaw/${repo.name}" target="_blank" rel="noopener noreferrer" class="btn sm primary">
               ${icon('github')} GitHub Repository ↗
             </a>
@@ -295,15 +308,15 @@ function renderRepoPage(repoName, mountPoint) {
         </div>
 
         ${demoLink ? `
-          <div class="tile hover" style="margin-top:16px;background:var(--elevated);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 16px;">
-            <div class="stack" style="gap:2px;">
+          <div class="repo-demo-banner tile hover">
+            <div class="stack" style="gap:3px;">
               <div class="row items-center" style="gap:6px;">
-                <span class="badge" style="background:var(--accent);color:#fff;font-size:9.5px;">INTERACTIVE DEMO</span>
-                <span class="font-bold text-sm text-paper-ink">${demoLink.title}</span>
+                <span class="badge" style="background:var(--accent);color:#fff;font-size:9.5px;font-weight:700;">INTERACTIVE DEMO</span>
+                <span class="font-bold text-sm" style="color:var(--ink);">${demoLink.title}</span>
               </div>
-              <p class="xs muted">${demoLink.blurb}</p>
+              <p class="xs muted" style="margin:0;">${demoLink.blurb}</p>
             </div>
-            <a href="${demoLink.href}" ${demoLink.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn sm primary" style="background:var(--accent);">
+            <a href="${demoLink.href}" ${demoLink.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn sm primary" style="background:var(--accent);border-color:var(--accent);box-shadow:0 4px 12px rgba(255,59,20,0.35);">
               ⚡ Launch Interactive Demo ↗
             </a>
           </div>
@@ -478,12 +491,20 @@ async function navigate() {
   const homeSections = $('#homeSections');
   const subViewContainer = $('#subViewContainer');
 
-  if (hash === '/' || hash === '') {
+  if (hash === '/' || hash === '' || !hash.startsWith('/')) {
     // Show Home
     homeSections.classList.remove('hidden');
     subViewContainer.classList.add('hidden');
     subViewContainer.innerHTML = '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (hash && hash !== '/') {
+      const targetId = hash.replace(/^#/, '');
+      const el = document.getElementById(targetId);
+      if (el) {
+        setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 30);
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     return;
   }
 
@@ -654,6 +675,607 @@ function renderDemosGrid() {
       <p class="xs muted clamp-2">${d.blurb}</p>
     </a>
   `).join('');
+}
+
+// 1. Home Page Quick In-Browser Workbench
+function initHomeQuickWorkbench() {
+  const devTab = $('#quickDevTab');
+  const imgTab = $('#quickImageTab');
+  const segBtns = $$('#quickToolSeg button');
+  if (!devTab || !imgTab) return;
+
+  segBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      segBtns.forEach(b => b.classList.toggle('bg-paper-surface', b === btn));
+      const isDev = btn.dataset.qtool === 'dev';
+      devTab.classList.toggle('hidden', !isDev);
+      imgTab.classList.toggle('hidden', isDev);
+      sfx('tick');
+    });
+  });
+
+  // Quick Dev Actions
+  const devInput = $('#quickDevInput');
+  const devOutput = $('#quickDevOutput');
+  const copyBtn = $('#copyQuickDevBtn');
+
+  function setDevOut(val) {
+    if (devOutput) devOutput.textContent = val;
+  }
+
+  $('#quickJsonBtn')?.addEventListener('click', () => {
+    const raw = (devInput?.value || '').trim();
+    if (!raw) return setDevOut('Please enter JSON text first.');
+    try {
+      const parsed = JSON.parse(raw);
+      setDevOut(JSON.stringify(parsed, null, 2));
+      toast('JSON parsed & formatted!', 'ok');
+      sfx('tick');
+    } catch (e) {
+      setDevOut(`Invalid JSON: ${e.message}`);
+      toast('Invalid JSON syntax', 'err');
+    }
+  });
+
+  $('#quickB64Btn')?.addEventListener('click', () => {
+    const raw = (devInput?.value || '').trim();
+    if (!raw) return setDevOut('Please enter text to encode/decode.');
+    try {
+      if (/^[A-Za-z0-9+/=]+$/.test(raw) && raw.length % 4 === 0) {
+        setDevOut(decodeURIComponent(escape(atob(raw))));
+        toast('Base64 decoded!', 'ok');
+      } else {
+        setDevOut(btoa(unescape(encodeURIComponent(raw))));
+        toast('Encoded to Base64!', 'ok');
+      }
+      sfx('tick');
+    } catch {
+      setDevOut(btoa(unescape(encodeURIComponent(raw))));
+      toast('Encoded to Base64!', 'ok');
+    }
+  });
+
+  $('#quickShaBtn')?.addEventListener('click', async () => {
+    const raw = (devInput?.value || '').trim();
+    if (!raw) return setDevOut('Please enter text to hash.');
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    setDevOut(hex);
+    toast('SHA-256 generated!', 'ok');
+    sfx('tick');
+  });
+
+  $('#quickUuidBtn')?.addEventListener('click', () => {
+    const id = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+    setDevOut(id);
+    if (devInput) devInput.value = id;
+    toast('UUID v4 generated!', 'ok');
+    sfx('tick');
+  });
+
+  copyBtn?.addEventListener('click', () => {
+    const text = devOutput?.textContent;
+    if (!text || text.startsWith('Result will appear')) return;
+    copyText(text);
+    toast('Copied result to clipboard!', 'ok');
+    sfx('copy');
+  });
+
+  // Quick Image Dropper
+  const dropZone = $('#quickDropZone');
+  const imgInput = $('#quickImageInput');
+  const imgResult = $('#quickImageResult');
+  const imgThumb = $('#quickImageThumb');
+  const imgMeta = $('#quickImageMeta');
+  const dlWebpBtn = $('#quickDownloadWebpBtn');
+  const dlPngBtn = $('#quickDownloadPngBtn');
+
+  let activeImgCanvas = null;
+  let activeImgName = 'image';
+
+  function processImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      toast('Please provide a valid image file', 'err');
+      return;
+    }
+    activeImgName = file.name.replace(/\.[^/.]+$/, '');
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth;
+        c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        activeImgCanvas = c;
+
+        imgThumb.src = e.target.result;
+        imgMeta.textContent = `${file.name} (${img.naturalWidth}×${img.naturalHeight}px, ${formatBytes(file.size)})`;
+        imgResult.classList.remove('hidden');
+        toast('Image loaded! Select export format.', 'ok');
+        sfx('toggleOn');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  dropZone?.addEventListener('click', () => imgInput?.click());
+  imgInput?.addEventListener('change', e => {
+    if (e.target.files && e.target.files[0]) {
+      processImageFile(e.target.files[0]);
+    }
+  });
+
+  dropZone?.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; });
+  dropZone?.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--line)'; });
+  dropZone?.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--line)';
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processImageFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  dlWebpBtn?.addEventListener('click', () => {
+    if (!activeImgCanvas) return;
+    activeImgCanvas.toBlob(blob => {
+      download(URL.createObjectURL(blob), `${activeImgName}.webp`);
+      toast('Saved as WebP!', 'ok');
+      sfx('download');
+    }, 'image/webp', 0.92);
+  });
+
+  dlPngBtn?.addEventListener('click', () => {
+    if (!activeImgCanvas) return;
+    activeImgCanvas.toBlob(blob => {
+      download(URL.createObjectURL(blob), `${activeImgName}.png`);
+      toast('Saved as PNG!', 'ok');
+      sfx('download');
+    }, 'image/png');
+  });
+}
+
+// 2. Home Page Interactive Live Showcase Playground
+function initHomeDemoPlayground() {
+  const canvas = $('#playgroundCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const titleEl = $('#playgroundDemoTitle');
+  const launchBtn = $('#playgroundLaunchBtn');
+  const webcamBtn = $('#playgroundWebcamBtn');
+  const effectBtn = $('#playgroundEffectBtn');
+  const hintEl = $('#playgroundHint span');
+
+  let activeDemo = 'matrix'; // 'matrix' | 'synth' | 'ascii' | 'pathfinder'
+  let colorIdx = 0;
+  const PALETTES = [
+    { name: 'Matrix Green', primary: '#00FF66', glow: 'rgba(0,255,102,0.4)', trail: 'rgba(5,5,5,0.25)' },
+    { name: 'Chainsaw Crimson', primary: '#FF3B14', glow: 'rgba(255,59,20,0.5)', trail: 'rgba(9,5,6,0.25)' },
+    { name: 'Cyber Cyan', primary: '#00E5FF', glow: 'rgba(0,229,255,0.4)', trail: 'rgba(4,9,12,0.25)' },
+    { name: 'Amber CRT', primary: '#FFB300', glow: 'rgba(255,179,0,0.4)', trail: 'rgba(10,8,4,0.25)' }
+  ];
+
+  let webcamStream = null;
+  let videoEl = null;
+  let isWebcamOn = false;
+
+  const sampleCanvas = document.createElement('canvas');
+  const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
+
+  const KATAKANA = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ01234567895IVESAW';
+  let columns = [];
+  let colsCount = 0;
+  let rowsCount = 0;
+  let animTime = 0;
+  let mouseX = -100, mouseY = -100, mouseActive = false;
+
+  // WebAudio Synth
+  let audioCtx = null;
+  let oscNode = null;
+  let filterNode = null;
+  let gainNode = null;
+  let isPointerDown = false;
+
+  // Pathfinder mini grid
+  const P_COLS = 28, P_ROWS = 14;
+  const pGrid = Array.from({ length: P_ROWS }, () => Array(P_COLS).fill(0));
+  let pStart = { r: 2, c: 2 };
+  let pEnd = { r: 11, c: 25 };
+  let pPath = [];
+
+  // Seed default obstacle labyrinth
+  for (let r = 0; r < P_ROWS; r++) {
+    for (let c = 0; c < P_COLS; c++) {
+      if ((c === 8 && r > 2) || (c === 16 && r < 11) || (c === 22 && r > 3)) {
+        pGrid[r][c] = 1;
+      }
+    }
+  }
+
+  function solveMiniPath() {
+    // Quick BFS / A*
+    const queue = [[pStart.r, pStart.c]];
+    const visited = Array.from({ length: P_ROWS }, () => Array(P_COLS).fill(false));
+    const parent = Array.from({ length: P_ROWS }, () => Array(P_COLS).fill(null));
+    visited[pStart.r][pStart.c] = true;
+
+    let reached = false;
+    const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+
+    while (queue.length > 0) {
+      const [cr, cc] = queue.shift();
+      if (cr === pEnd.r && cc === pEnd.c) {
+        reached = true;
+        break;
+      }
+      for (const [dr, dc] of dirs) {
+        const nr = cr + dr, nc = cc + dc;
+        if (nr >= 0 && nr < P_ROWS && nc >= 0 && nc < P_COLS && !visited[nr][nc] && pGrid[nr][nc] === 0) {
+          visited[nr][nc] = true;
+          parent[nr][nc] = [cr, cc];
+          queue.push([nr, nc]);
+        }
+      }
+    }
+
+    pPath = [];
+    if (reached) {
+      let cur = [pEnd.r, pEnd.c];
+      while (cur) {
+        pPath.unshift(cur);
+        cur = parent[cur[0]][cur[1]];
+      }
+    }
+  }
+
+  function resizeCanvas() {
+    fitCanvas(canvas);
+    colsCount = Math.floor(canvas.width / 13);
+    rowsCount = Math.floor(canvas.height / 13);
+    sampleCanvas.width = Math.max(1, colsCount);
+    sampleCanvas.height = Math.max(1, rowsCount);
+    columns = Array.from({ length: colsCount }, () => ({
+      y: Math.random() * -rowsCount,
+      speed: 0.8 + Math.random() * 0.9,
+      chars: Array.from({ length: rowsCount }, () => KATAKANA[Math.floor(Math.random() * KATAKANA.length)])
+    }));
+    solveMiniPath();
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // Mouse / Pointer tracking
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+    mouseActive = true;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseActive = false;
+  });
+
+  // Audio Synth init
+  function ensureAudio() {
+    if (audioCtx) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContextClass();
+    filterNode = audioCtx.createBiquadFilter();
+    filterNode.type = 'lowpass';
+    filterNode.frequency.value = 1600;
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0.0001;
+
+    filterNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+  }
+
+  function startSynthVoice(pitch, cutoff) {
+    ensureAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (!oscNode) {
+      oscNode = audioCtx.createOscillator();
+      oscNode.type = 'sawtooth';
+      oscNode.frequency.value = pitch;
+      oscNode.connect(filterNode);
+      oscNode.start();
+    }
+    const now = audioCtx.currentTime;
+    oscNode.frequency.setTargetAtTime(pitch, now, 0.02);
+    filterNode.frequency.setTargetAtTime(cutoff, now, 0.02);
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+    gainNode.gain.linearRampToValueAtTime(0.2, now + 0.04);
+  }
+
+  function stopSynthVoice() {
+    if (!audioCtx || !gainNode) return;
+    const now = audioCtx.currentTime;
+    gainNode.gain.cancelScheduledValues(now);
+    gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    isPointerDown = true;
+    const rect = canvas.getBoundingClientRect();
+    const xRatio = (e.clientX - rect.left) / rect.width;
+    const yRatio = (e.clientY - rect.top) / rect.height;
+
+    if (activeDemo === 'synth') {
+      const pitch = 80 * Math.pow(8, xRatio);
+      const cutoff = 200 * Math.pow(30, 1 - yRatio);
+      startSynthVoice(pitch, cutoff);
+    } else if (activeDemo === 'pathfinder') {
+      const c = Math.floor(xRatio * P_COLS);
+      const r = Math.floor(yRatio * P_ROWS);
+      if (r >= 0 && r < P_ROWS && c >= 0 && c < P_COLS) {
+        if (!(r === pStart.r && c === pStart.c) && !(r === pEnd.r && c === pEnd.c)) {
+          pGrid[r][c] = pGrid[r][c] === 1 ? 0 : 1;
+          solveMiniPath();
+          sfx('tick');
+        }
+      }
+    }
+  });
+
+  window.addEventListener('pointermove', e => {
+    if (!isPointerDown) return;
+    const rect = canvas.getBoundingClientRect();
+    const xRatio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const yRatio = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+
+    if (activeDemo === 'synth') {
+      const pitch = 80 * Math.pow(8, xRatio);
+      const cutoff = 200 * Math.pow(30, 1 - yRatio);
+      startSynthVoice(pitch, cutoff);
+    }
+  });
+
+  window.addEventListener('pointerup', () => {
+    if (isPointerDown) {
+      isPointerDown = false;
+      stopSynthVoice();
+    }
+  });
+
+  // Tab switching
+  const tabBtns = $$('#playgroundTabsSeg button');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.toggle('bg-paper-surface', b === btn));
+      activeDemo = btn.dataset.pdemo;
+      sfx('tick');
+
+      if (activeDemo === 'matrix') {
+        titleEl.textContent = '🌧️ Matrix Digital Rain & Neural Mirror';
+        launchBtn.href = '#/demos/matrix-rain';
+        hintEl.textContent = 'Move cursor or drag to disrupt rain';
+      } else if (activeDemo === 'synth') {
+        titleEl.textContent = '⚡ Cyber Theremin Audio Synth & CRT Scope';
+        launchBtn.href = '#/demos/audio-synth';
+        hintEl.textContent = 'Click & drag anywhere to play synthesizer';
+      } else if (activeDemo === 'ascii') {
+        titleEl.textContent = '📹 ASCII Video & Cursed Text Engine';
+        launchBtn.href = '#/demos/bad-apple';
+        hintEl.textContent = 'Real-time ASCII downsampler & video feed';
+      } else if (activeDemo === 'pathfinder') {
+        titleEl.textContent = '🧭 A* Pathfinder Heuristic Grid';
+        launchBtn.href = '#/demos/pathfinder';
+        hintEl.textContent = 'Click cells to paint walls and reroute path';
+      }
+    });
+  });
+
+  // Cycle palette button
+  effectBtn?.addEventListener('click', () => {
+    colorIdx = (colorIdx + 1) % PALETTES.length;
+    toast(`Palette: ${PALETTES[colorIdx].name}`, 'ok');
+    sfx('tick');
+  });
+
+  // Webcam toggle
+  webcamBtn?.addEventListener('click', async () => {
+    if (isWebcamOn) {
+      if (webcamStream) webcamStream.getTracks().forEach(t => t.stop());
+      webcamStream = null;
+      videoEl = null;
+      isWebcamOn = false;
+      toast('Webcam off', 'ok');
+      sfx('toggleOff');
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        webcamStream = stream;
+        videoEl = document.createElement('video');
+        videoEl.srcObject = stream;
+        videoEl.playsInline = true;
+        videoEl.muted = true;
+        await videoEl.play();
+        isWebcamOn = true;
+        toast('Webcam online on homepage playground!', 'ok');
+        sfx('toggleOn');
+      } catch (err) {
+        toast('Webcam permission denied or unavailable', 'err');
+      }
+    }
+  });
+
+  // Main Render Loop
+  function renderPlayground() {
+    animTime += 0.035;
+    const w = canvas.width;
+    const h = canvas.height;
+    const theme = PALETTES[colorIdx];
+
+    // Background fade
+    ctx.fillStyle = theme.trail;
+    ctx.fillRect(0, 0, w, h);
+
+    if (activeDemo === 'matrix') {
+      // 1. Matrix Digital Rain
+      let sampleData = null;
+      if (isWebcamOn && videoEl && videoEl.readyState >= 2) {
+        sampleCtx.save();
+        sampleCtx.translate(colsCount, 0);
+        sampleCtx.scale(-1, 1);
+        sampleCtx.drawImage(videoEl, 0, 0, colsCount, rowsCount);
+        sampleCtx.restore();
+        sampleData = sampleCtx.getImageData(0, 0, colsCount, rowsCount).data;
+      }
+
+      ctx.font = 'bold 12px monospace';
+      ctx.textBaseline = 'top';
+
+      for (let c = 0; c < colsCount; c++) {
+        const col = columns[c];
+        if (!col) continue;
+        col.y += col.speed;
+        if (col.y > rowsCount + 6) col.y = -Math.random() * 10;
+        const headRow = Math.floor(col.y);
+
+        for (let r = 0; r < rowsCount; r++) {
+          const char = col.chars[r] || '5';
+          const x = c * 13;
+          const y = r * 13;
+          let lum = 0;
+
+          if (sampleData) {
+            const idx = (r * colsCount + c) * 4;
+            lum = (0.299 * sampleData[idx] + 0.587 * sampleData[idx + 1] + 0.114 * sampleData[idx + 2]) / 255;
+          } else {
+            const dx = c - colsCount / 2;
+            const dy = r - rowsCount / 2;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            lum = Math.max(0, Math.sin(dist * 0.25 - animTime * 2) * 0.6);
+          }
+
+          if (mouseActive) {
+            const mdx = x - mouseX, mdy = y - mouseY;
+            const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+            if (mdist < 80) lum = Math.min(1, lum + (1 - mdist / 80));
+          }
+
+          const distHead = headRow - r;
+          if (distHead === 0) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.shadowColor = theme.glow;
+            ctx.shadowBlur = 8;
+            ctx.fillText(char, x, y);
+            ctx.shadowBlur = 0;
+          } else if (distHead > 0 && distHead < 12) {
+            ctx.fillStyle = distHead < 3 ? '#E0FFE0' : theme.primary;
+            ctx.fillText(char, x, y);
+          } else if (lum > 0.3) {
+            ctx.fillStyle = lum > 0.7 ? '#FFFFFF' : theme.primary;
+            ctx.fillText(char, x, y);
+          }
+        }
+      }
+
+    } else if (activeDemo === 'synth') {
+      // 2. Vector Lissajous Oscilloscope
+      ctx.save();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = theme.primary;
+      ctx.shadowColor = theme.glow;
+      ctx.shadowBlur = 10;
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const radius = Math.min(w, h) * 0.36;
+
+      ctx.beginPath();
+      const points = 360;
+      for (let i = 0; i <= points; i++) {
+        const t = (i / points) * Math.PI * 2;
+        const wave = Math.sin(t * 3 + animTime * 3) * (isPointerDown ? 1.4 : 0.8);
+        const x = cx + Math.sin(t * 2 + animTime * 1.5) * (radius + wave * 20);
+        const y = cy + Math.cos(t * 3 - animTime * 1.2) * (radius + wave * 20);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+
+    } else if (activeDemo === 'ascii') {
+      // 3. ASCII Torus & Cursed Camera
+      ctx.font = 'bold 11px monospace';
+      ctx.textBaseline = 'top';
+      const RAMPS = [' ', '.', ':', '-', '=', '+', '*', 'S', 'A', 'W', '5', '@', '#'];
+      const cx = Math.floor(colsCount / 2);
+      const cy = Math.floor(rowsCount / 2);
+
+      for (let r = 0; r < rowsCount; r++) {
+        for (let c = 0; c < colsCount; c++) {
+          const dx = c - cx;
+          const dy = (r - cy) * 1.8;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const angle = Math.atan2(dy, dx);
+          const torus = Math.sin(dist * 0.4 - animTime * 2) * Math.cos(angle * 4 + animTime);
+          const charIdx = Math.max(0, Math.min(RAMPS.length - 1, Math.floor(((torus + 1) / 2) * RAMPS.length)));
+          ctx.fillStyle = charIdx > 8 ? '#FFFFFF' : theme.primary;
+          ctx.fillText(RAMPS[charIdx], c * 13, r * 13);
+        }
+      }
+
+    } else if (activeDemo === 'pathfinder') {
+      // 4. A* Interactive Maze
+      const cellW = w / P_COLS;
+      const cellH = h / P_ROWS;
+
+      for (let r = 0; r < P_ROWS; r++) {
+        for (let c = 0; c < P_COLS; c++) {
+          const x = c * cellW;
+          const y = r * cellH;
+
+          if (r === pStart.r && c === pStart.c) {
+            ctx.fillStyle = '#22C55E';
+            ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+          } else if (r === pEnd.r && c === pEnd.c) {
+            ctx.fillStyle = '#EF4444';
+            ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+          } else if (pGrid[r][c] === 1) {
+            ctx.fillStyle = '#2A2022';
+            ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+          } else {
+            ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+            ctx.strokeRect(x, y, cellW, cellH);
+          }
+        }
+      }
+
+      // Draw Path
+      if (pPath.length > 1) {
+        ctx.save();
+        ctx.strokeStyle = theme.primary;
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = theme.glow;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        for (let i = 0; i < pPath.length; i++) {
+          const [pr, pc] = pPath[i];
+          const px = pc * cellW + cellW / 2;
+          const py = pr * cellH + cellH / 2;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    requestAnimationFrame(renderPlayground);
+  }
+
+  requestAnimationFrame(renderPlayground);
 }
 
 // Music Dock UI Wiring
@@ -925,6 +1547,8 @@ async function initApp() {
   // 1. Mount instant static tools & demos IMMEDIATELY without waiting for network
   renderToolsGrid();
   renderDemosGrid();
+  initHomeQuickWorkbench();
+  initHomeDemoPlayground();
   initHeroCanvas();
   initMusicDock();
 

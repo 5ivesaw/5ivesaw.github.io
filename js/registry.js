@@ -8,6 +8,8 @@ import devToolkit from './tools/dev.js';
 import pathfinderDemo from './demos/pathfinder.js';
 import asciiPlayerDemo from './demos/ascii-player.js';
 import badAppleDemo from './demos/bad-apple.js';
+import matrixRainDemo from './demos/matrix-rain.js';
+import audioSynthDemo from './demos/audio-synth.js';
 
 export const TOOLS = [
   {
@@ -68,5 +70,21 @@ export const DEMOS = [
     blurb: 'Turns webcam or video into FiveSaw-flavoured cursed text art in real time.',
     icon: 'cam',
     runner: badAppleDemo
+  },
+  {
+    id: 'matrix-rain',
+    repo: 'matrix-neural-cam',
+    title: 'Matrix Digital Rain',
+    blurb: 'Downsamples webcam or procedural depth into dripping cyberpunk matrix code and neural ripples.',
+    icon: 'cam',
+    runner: matrixRainDemo
+  },
+  {
+    id: 'audio-synth',
+    repo: 'cyber-oscilloscope',
+    title: 'Cyber Synth & Oscilloscope',
+    blurb: 'Interactive touch Theremin synthesizer with real-time vector CRT Lissajous beam & mic analyzer.',
+    icon: 'audio',
+    runner: audioSynthDemo
   }
 ];
