@@ -613,6 +613,11 @@ export function parseYouTubeId(input) {
   return match ? match[1] : null;
 }
 
+// Clean emoji stripper to strictly adhere to NO EMOJI rule
+export function stripEmojis(str) {
+  return (str || '').replace(/[\u{10000}-\u{10ffff}\u{2600}-\u{27bf}\u{1f300}-\u{1f9ff}]/gu, '').trim();
+}
+
 // Dynamic Shorts search using open Invidious & Piped endpoints with strict <= 60s filter
 export async function searchShortsNiche(query) {
   if (!query || !query.trim()) return SHORTS_NICHES.memes.items;
@@ -629,8 +634,8 @@ export async function searchShortsNiche(query) {
         const meta = await metaRes.json();
         return [{
           id: directId,
-          title: meta.title || 'YouTube Short',
-          author: meta.author_name || 'YouTube Creator',
+          title: stripEmojis(meta.title) || 'YouTube Short',
+          author: stripEmojis(meta.author_name) || 'YouTube Creator',
           duration: 30,
           url: `https://www.youtube.com/shorts/${directId}`
         }];
@@ -655,8 +660,8 @@ export async function searchShortsNiche(query) {
           .filter(v => v.videoId && v.lengthSeconds && v.lengthSeconds > 2 && v.lengthSeconds <= 60)
           .map(v => ({
             id: v.videoId,
-            title: v.title || 'YouTube Short',
-            author: v.author || 'YouTube Creator',
+            title: stripEmojis(v.title) || 'YouTube Short',
+            author: stripEmojis(v.author) || 'YouTube Creator',
             duration: v.lengthSeconds,
             url: `https://www.youtube.com/shorts/${v.videoId}`
           }));
@@ -674,8 +679,8 @@ export async function searchShortsNiche(query) {
           })
           .map(v => ({
             id: parseYouTubeId(v.url),
-            title: v.title || 'YouTube Short',
-            author: v.uploaderName || 'YouTube Creator',
+            title: stripEmojis(v.title) || 'YouTube Short',
+            author: stripEmojis(v.uploaderName) || 'YouTube Creator',
             duration: v.duration,
             url: `https://www.youtube.com/shorts/${parseYouTubeId(v.url)}`
           }));
@@ -2045,8 +2050,8 @@ export default {
       const clip = activeDoomFeed[doomIndex];
 
       if (doomCounter) doomCounter.textContent = `${doomIndex + 1} / ${activeDoomFeed.length}`;
-      if (doomAuthor) doomAuthor.textContent = clip.author || 'YouTube Shorts';
-      if (doomTitle) doomTitle.textContent = clip.title || 'Authentic Short';
+      if (doomAuthor) doomAuthor.textContent = stripEmojis(clip.author) || 'YouTube Shorts';
+      if (doomTitle) doomTitle.textContent = stripEmojis(clip.title) || 'Authentic Short';
 
       const durationBadge = $('#doomscrollDurationBadge');
       if (durationBadge) {
