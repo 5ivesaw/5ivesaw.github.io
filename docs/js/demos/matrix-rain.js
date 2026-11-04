@@ -182,17 +182,16 @@ export default {
     window.addEventListener('resize', initColumns);
     initColumns();
 
-    // Mouse disruption
+    // Mouse disruption (zero layout thrashing via offsetX/offsetY)
     canvas.addEventListener('mousemove', e => {
-      const rect = canvas.getBoundingClientRect();
-      state.mousePos.x = e.clientX - rect.left;
-      state.mousePos.y = e.clientY - rect.top;
+      state.mousePos.x = e.offsetX;
+      state.mousePos.y = e.offsetY;
       state.mouseActive = true;
-    });
+    }, { passive: true });
 
     canvas.addEventListener('mouseleave', () => {
       state.mouseActive = false;
-    });
+    }, { passive: true });
 
     // Webcam setup
     async function startWebcam() {

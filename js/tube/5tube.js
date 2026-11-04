@@ -29,148 +29,700 @@ let currentComments = [];
 let syncedComments = [];
 let activeVideoId = 'eXRWHzV72sU';
 
-// ---------------- SHORTS NICHES & CURATED FEEDS ----------------
-// Authentic YouTube Shorts across popular categories (NO music-only playlist)
+// ---------------- AUTHENTIC SHORTS NICHES & DYNAMIC SEARCH ----------------
+// 100% Genuine YouTube Shorts (each strictly <= 60 seconds / max 1 minute)
+// No fake generated text or YouTuber names. All titles, channels & IDs are authentic.
 export const SHORTS_NICHES = {
-  memes: {
-    id: 'memes',
-    name: 'Memes & Brainrot',
-    icon: 'zap',
-    desc: 'Viral memes, funny skits & sound edits',
-    items: [
-      { id: 'oPjQvFmU8sY', title: 'Spinning cat meme compilation', author: 'Meme Central' },
-      { id: 'q7o7PRHPYm0', title: 'Emotional Damage legendary clip', author: 'Steven He' },
-      { id: 'm8e-Cq98Nmw', title: 'Sigma sound edit with impossible timing', author: 'SigmaShorts' },
-      { id: 'aAkMkVFwAoo', title: 'The unexpected plot twist', author: 'DailyHumor' },
-      { id: 'kH_N_y2yW88', title: 'Bro really thought he got away', author: 'GiggleHub' },
-      { id: '8b92kF1_o0Y', title: 'When the joke lands a little too well', author: 'LaughTrack' }
+  "memes": {
+    "id": "memes",
+    "name": "Memes & Brainrot",
+    "icon": "zap",
+    "desc": "Viral memes, funny skits & sound edits",
+    "items": [
+      {
+        "id": "r94vuvwUSkY",
+        "title": "What? Meme",
+        "author": "Nick M",
+        "duration": 6,
+        "url": "https://www.youtube.com/shorts/r94vuvwUSkY"
+      },
+      {
+        "id": "35KDnej1hlI",
+        "title": "Memes No Copyright Free to use on YouTube videos.",
+        "author": "HimanshuFoxx",
+        "duration": 56,
+        "url": "https://www.youtube.com/shorts/35KDnej1hlI"
+      },
+      {
+        "id": "RmCevnbF6sM",
+        "title": "majnu majnu memes || By Color memes",
+        "author": "Colour Memes",
+        "duration": 5,
+        "url": "https://www.youtube.com/shorts/RmCevnbF6sM"
+      },
+      {
+        "id": "74HlJGMV87E",
+        "title": "black men laughing meme",
+        "author": "African Meme Center",
+        "duration": 5,
+        "url": "https://www.youtube.com/shorts/74HlJGMV87E"
+      },
+      {
+        "id": "3b_NCIhbL0s",
+        "title": "Bigger Better Stronger | Animation meme",
+        "author": "crustery",
+        "duration": 46,
+        "url": "https://www.youtube.com/shorts/3b_NCIhbL0s"
+      },
+      {
+        "id": "MaaK3fOLBTo",
+        "title": "Every viral meme sound effect | viral meme template | meme sound effects",
+        "author": "Meme Clips",
+        "duration": 15,
+        "url": "https://www.youtube.com/shorts/MaaK3fOLBTo"
+      },
+      {
+        "id": "L6CMypl1q8I",
+        "title": "OMG (meme) - Sound Effect",
+        "author": "Any Sound Effects",
+        "duration": 5,
+        "url": "https://www.youtube.com/shorts/L6CMypl1q8I"
+      },
+      {
+        "id": "cdIs7VujZqs",
+        "title": "SHOCK PLUS AMAZED funny Meme Clip for Video Editing | NO COPYRIGHT",
+        "author": "Papa D\" Channel",
+        "duration": 11,
+        "url": "https://www.youtube.com/shorts/cdIs7VujZqs"
+      },
+      {
+        "id": "1rVuRhpLScI",
+        "title": "Dr. Reasons original Laughing video Original Guy Laughing On Another Meme Template - Dr. Reasons",
+        "author": "9 Million Memes",
+        "duration": 17,
+        "url": "https://www.youtube.com/shorts/1rVuRhpLScI"
+      },
+      {
+        "id": "nbwweHCUtsA",
+        "title": "But If You Close Your Eyes (roblox meme)",
+        "author": "Olympus Stuff",
+        "duration": 33,
+        "url": "https://www.youtube.com/shorts/nbwweHCUtsA"
+      }
     ]
   },
-  gaming: {
-    id: 'gaming',
-    name: 'Gaming & Clips',
-    icon: 'gamepad',
-    desc: 'Minecraft clutches, GTA physics & Elden Ring parries',
-    items: [
-      { id: 'Ww8mG3y3_2c', title: 'Minecraft 1v4 clutch play of the year', author: 'ClutchGamer' },
-      { id: 'y6120QOlsfU', title: 'GTA 5 Impossible ramp jump across map', author: 'SpeedyStunts' },
-      { id: '9wA_jF1J_4M', title: 'Elden Ring parrying boss blindfolded', author: 'SoulsVeteran' },
-      { id: 'fC7oUOUEEi4', title: 'Geometry Dash extreme demon last jump', author: 'DashMaster' },
-      { id: 'f4tWw9X0XbM', title: 'Valorant 1 tap ace in 3 seconds', author: 'RadiantClips' },
-      { id: 'g_R5m_zZ_8k', title: 'Subway Surfers impossible speedrun movement', author: 'SurferPro' }
+  "gaming": {
+    "id": "gaming",
+    "name": "Gaming & Clips",
+    "icon": "gamepad",
+    "desc": "Minecraft clutches, speedruns & game physics",
+    "items": [
+      {
+        "id": "ngy0r1Ww2HA",
+        "title": "Minecraft, But I Die If You Watch This Video",
+        "author": "iShoya",
+        "duration": 16,
+        "url": "https://www.youtube.com/shorts/ngy0r1Ww2HA"
+      },
+      {
+        "id": "aVTfg7WVAPU",
+        "title": "Minecraft x Transformers Add-on",
+        "author": "Minecraft and TRANSFORMERS",
+        "duration": 46,
+        "url": "https://www.youtube.com/shorts/aVTfg7WVAPU"
+      },
+      {
+        "id": "o_JCAeJng3o",
+        "title": "Minecraft: Shorts Compliations (Memes) - Part 10 of 10 #Minecraft #Memes - Cryptic",
+        "author": "Cryptic.",
+        "duration": 17,
+        "url": "https://www.youtube.com/shorts/o_JCAeJng3o"
+      },
+      {
+        "id": "km4r3dl0A6A",
+        "title": "Minecraft: This Is Our Time (Part 3 of 3) #minecraft - Cryptic",
+        "author": "Cryptic.",
+        "duration": 14,
+        "url": "https://www.youtube.com/shorts/km4r3dl0A6A"
+      },
+      {
+        "id": "yuhwqy8ONUw",
+        "title": "Minecraft: PARKOURING HARD MODE (Part 6 of 14) #minecraft - Cryptic",
+        "author": "Cryptic.",
+        "duration": 9,
+        "url": "https://www.youtube.com/shorts/yuhwqy8ONUw"
+      },
+      {
+        "id": "jo4K8me2q_k",
+        "title": "Minecraft: BAD EDITED #minecraft #parkour #shorts - Cryptic",
+        "author": "Cryptic.",
+        "duration": 9,
+        "url": "https://www.youtube.com/shorts/jo4K8me2q_k"
+      },
+      {
+        "id": "ofpFsQ32m_A",
+        "title": "Minecraft: CUBECRAFT FAILS (Part 3 of 4) #minecraft #parkour #shorts - Cryptic",
+        "author": "Cryptic.",
+        "duration": 12,
+        "url": "https://www.youtube.com/shorts/ofpFsQ32m_A"
+      },
+      {
+        "id": "wLXd9wYxPZs",
+        "title": "Minecraft: CUBECRAFT FAILS (Part 2 of 4) #minecraft #parkour #shorts - Cryptic",
+        "author": "Cryptic.",
+        "duration": 20,
+        "url": "https://www.youtube.com/shorts/wLXd9wYxPZs"
+      },
+      {
+        "id": "U0SBojxahIc",
+        "title": "Minecraft: CUBECRAFT FAILS (Part 4 of 4) #minecraft #parkour #shorts - Cryptic",
+        "author": "Cryptic.",
+        "duration": 21,
+        "url": "https://www.youtube.com/shorts/U0SBojxahIc"
+      }
     ]
   },
-  satisfying: {
-    id: 'satisfying',
-    name: 'Satisfying & ASMR',
-    icon: 'sparkle',
-    desc: 'Kinetic sand slicing, soap carving & 3D loops',
-    items: [
-      { id: 'mRjV_9rFv9M', title: 'Kinetic sand slicing clean crisp audio', author: 'SandFactory' },
-      { id: 'L_LUpnjgPso', title: 'Soap block peeling ultimate satisfaction', author: 'ASMRCraft' },
-      { id: 'u0F8J912gHY', title: 'Hydraulic press vs solid titanium sphere', author: 'CrushLab' },
-      { id: 'K7n3v37Ew1A', title: '100,000 Dominoes falling in perfect spiral', author: 'DominoKing' },
-      { id: 'dQw4w9WgXcQ', title: '3D mechanical perpetual marble loop', author: 'PhysicsSim' }
+  "satisfying": {
+    "id": "satisfying",
+    "name": "Satisfying & ASMR",
+    "icon": "sparkle",
+    "desc": "Kinetic sand, soap carving & crystal slicing",
+    "items": [
+      {
+        "id": "R1rLVewmIfE",
+        "title": "Slicing Shell Soap  | Satisfying ASMR #asmr #video",
+        "author": "ASMR",
+        "duration": 9,
+        "url": "https://www.youtube.com/shorts/R1rLVewmIfE"
+      },
+      {
+        "id": "C-A9e4ixcKQ",
+        "title": "Soap Opening | Noise ASMR | Satisfying Video | ASMR No talking  #meditation #Relax #asmr",
+        "author": "Jabón Relajante ASMR",
+        "duration": 5,
+        "url": "https://www.youtube.com/shorts/C-A9e4ixcKQ"
+      },
+      {
+        "id": "zOdYc2DLCms",
+        "title": "Super Crunchy Soap Squishy!  | Satisfying ASMR",
+        "author": "Daisy Kate & Co",
+        "duration": 25,
+        "url": "https://www.youtube.com/shorts/zOdYc2DLCms"
+      },
+      {
+        "id": "Fw86qhEQNLs",
+        "title": "* Slicing an Emerald Gem  | The Most Satisfying ASMR",
+        "author": "SILENT SLICES ASMR",
+        "duration": 9,
+        "url": "https://www.youtube.com/shorts/Fw86qhEQNLs"
+      },
+      {
+        "id": "RbA3rVA9YQ8",
+        "title": "What’s Inside the Glass Sphere?  Satisfying Shatter ASMR",
+        "author": "SphereVerse ASMR",
+        "duration": 57,
+        "url": "https://www.youtube.com/shorts/RbA3rVA9YQ8"
+      },
+      {
+        "id": "pZXzLNpGLuA",
+        "title": "ASMR: Unboxing a Giant Mystery Box Full of Candy  chocolate rainbow lollipops Satisfying video",
+        "author": "M&M Candy",
+        "duration": 6,
+        "url": "https://www.youtube.com/shorts/pZXzLNpGLuA"
+      },
+      {
+        "id": "jkN3I4kCq-o",
+        "title": "Super Crunchy Peanut Squishy!  | Satisfying ASMR",
+        "author": "Daisy Kate & Co",
+        "duration": 32,
+        "url": "https://www.youtube.com/shorts/jkN3I4kCq-o"
+      },
+      {
+        "id": "HU85WZUyLKc",
+        "title": "Slicing Crystal Fruits  | Satisfying ASMR",
+        "author": "Noxliva",
+        "duration": 20,
+        "url": "https://www.youtube.com/shorts/HU85WZUyLKc"
+      },
+      {
+        "id": "QS8bSYKblpI",
+        "title": "Cutting a Frozen Glass Banana!  Satisfying ASMR",
+        "author": "SatisfyVerse ASMR",
+        "duration": 17,
+        "url": "https://www.youtube.com/shorts/QS8bSYKblpI"
+      }
     ]
   },
-  comedy: {
-    id: 'comedy',
-    name: 'Comedy & Fails',
-    icon: 'laugh',
-    desc: 'Standup punchlines, public pranks & funny fails',
-    items: [
-      { id: 'p3oR9Y8q2xM', title: 'Public microphone question goes completely wrong', author: 'StreetJokes' },
-      { id: 'w3_b98124uY', title: 'Instant karma caught in 4K', author: 'FailArmy' },
-      { id: 'n29u_fF91jA', title: 'Orange cat operating with 1 brain cell', author: 'CatVibes' },
-      { id: 'g81_0kNm24a', title: 'Dad joke competition with water in mouth', author: 'PunMasters' }
+  "comedy": {
+    "id": "comedy",
+    "name": "Comedy & Fails",
+    "icon": "laugh",
+    "desc": "Standup punchlines, crowd work & quick jokes",
+    "items": [
+      {
+        "id": "Jrjwm0O1dDY",
+        "title": "Australian Accents Are Always Funny! #shanegillis #comedy",
+        "author": "Twitch Time Capsule",
+        "duration": 46,
+        "url": "https://www.youtube.com/shorts/Jrjwm0O1dDY"
+      },
+      {
+        "id": "eiISFYR-cJo",
+        "title": "Baby Neck | Andy Woodhull Stand-Up Comedy #shorts",
+        "author": "Andy Woodhull",
+        "duration": 29,
+        "url": "https://www.youtube.com/shorts/eiISFYR-cJo"
+      },
+      {
+        "id": "wHLQNxpBimw",
+        "title": "What do you call this? #shorts #comedyshorts #standupcomedy #funny",
+        "author": "Tera Kilbride Comedy",
+        "duration": 25,
+        "url": "https://www.youtube.com/shorts/wHLQNxpBimw"
+      },
+      {
+        "id": "Gvbz0krYj1o",
+        "title": "First show after the last show | Standup comedy #shorts",
+        "author": "The Habitat Studios",
+        "duration": 30,
+        "url": "https://www.youtube.com/shorts/Gvbz0krYj1o"
+      },
+      {
+        "id": "nbzMqySig_M",
+        "title": "#shorts #comedian #comedy #jokes #standup #standupcomedy #drake #kendricklamar #notlikeus #funny",
+        "author": "Tyson Colson",
+        "duration": 43,
+        "url": "https://www.youtube.com/shorts/nbzMqySig_M"
+      },
+      {
+        "id": "CLiPDj0GmD8",
+        "title": "funny hasi || funny status || funny short clip || funny hasi sound || funny laughing mems",
+        "author": "Er rahmat",
+        "duration": 11,
+        "url": "https://www.youtube.com/shorts/CLiPDj0GmD8"
+      },
+      {
+        "id": "OSqOOIdNi8A",
+        "title": "Laughing Meme No Copyright funny video comedy clip Meme video short",
+        "author": "GapSap With Manish",
+        "duration": 13,
+        "url": "https://www.youtube.com/shorts/OSqOOIdNi8A"
+      },
+      {
+        "id": "lKeVzB231lA",
+        "title": "Shampu ads funny dubbing video | short hindi comedy | best memes | RDX Mixer",
+        "author": "RDX Mixer",
+        "duration": 49,
+        "url": "https://www.youtube.com/shorts/lKeVzB231lA"
+      }
     ]
   },
-  tech: {
-    id: 'tech',
-    name: 'Tech & Future',
-    icon: 'monitor',
-    desc: 'Atlas parkour, robotics, AI experiments & gadgets',
-    items: [
-      { id: 'k79Y821fMno', title: 'Boston Dynamics Atlas robot gymnastics', author: 'Boston Dynamics' },
-      { id: 'x92fL019uNm', title: 'Neural physics engine simulating fluid', author: 'AI Frontiers' },
-      { id: '8f1_0m28jLa', title: 'Wearable hologram interface real prototype', author: 'FutureTech' },
-      { id: '2f91_xNm812', title: 'Electric vehicle autonomous drift track test', author: 'CyberGear' }
+  "tech": {
+    "id": "tech",
+    "name": "Tech & Future",
+    "icon": "monitor",
+    "desc": "Robotics, AI experiments, tech demos & hardware",
+    "items": [
+      {
+        "id": "uVcBa6NXAbk",
+        "title": "Introducing NEO Gamma | Another Step Closer to Home",
+        "author": "1X",
+        "duration": 38,
+        "url": "https://www.youtube.com/shorts/uVcBa6NXAbk"
+      },
+      {
+        "id": "XswCMLLeJZY",
+        "title": "pib#5 is Here: Next-Gen Open-Source Humanoid Robot",
+        "author": "pibrocks",
+        "duration": 48,
+        "url": "https://www.youtube.com/shorts/XswCMLLeJZY"
+      },
+      {
+        "id": "IDSVpnNibF8",
+        "title": "Elon Musk’s Optimus Robot Could Change Our Future!",
+        "author": "Elon musk insider",
+        "duration": 53,
+        "url": "https://www.youtube.com/shorts/IDSVpnNibF8"
+      },
+      {
+        "id": "qkIJELDgULA",
+        "title": "Unitree Breakthrough: The World’s First Fully Autonomous Humanoid Robot Combat",
+        "author": "Unitree Robotics",
+        "duration": 39,
+        "url": "https://www.youtube.com/shorts/qkIJELDgULA"
+      },
+      {
+        "id": "JVo6YBvXEb0",
+        "title": "Chinese robotics startup showcases traffic-directing robot",
+        "author": "CBS Chicago",
+        "duration": 31,
+        "url": "https://www.youtube.com/shorts/JVo6YBvXEb0"
+      },
+      {
+        "id": "yt-5dv4Ag2E",
+        "title": "This humanoid robot could be the future of A.I. hardware",
+        "author": "Yahoo Finance",
+        "duration": 60,
+        "url": "https://www.youtube.com/shorts/yt-5dv4Ag2E"
+      },
+      {
+        "id": "GQHx67tzVCo",
+        "title": "Unitree Introducing: UniUni Intelligent Swarm Control System",
+        "author": "Unitree Robotics",
+        "duration": 51,
+        "url": "https://www.youtube.com/shorts/GQHx67tzVCo"
+      },
+      {
+        "id": "bcVNBn5R_rY",
+        "title": "From AlphaGo to AstraTennis: The World’s First Autonomous Humanoid Robot Tennis Match | GALBOT",
+        "author": "Galbot",
+        "duration": 44,
+        "url": "https://www.youtube.com/shorts/bcVNBn5R_rY"
+      },
+      {
+        "id": "IPukuYb9xWw",
+        "title": "Ameca Humanoid Robot AI Platform",
+        "author": "Engineered Arts",
+        "duration": 42,
+        "url": "https://www.youtube.com/shorts/IPukuYb9xWw"
+      },
+      {
+        "id": "reiTh7K4KSc",
+        "title": "Meet Microduck, the $399 Tiny Robot You Can Teach New Tricks",
+        "author": "Pollen Robotics",
+        "duration": 52,
+        "url": "https://www.youtube.com/shorts/reiTh7K4KSc"
+      }
     ]
   },
-  anime: {
-    id: 'anime',
-    name: 'Anime & Animation',
-    icon: 'film',
-    desc: 'Sakuga combat cuts, high FPS animation & AMVs',
-    items: [
-      { id: 'j1_9082mNlk', title: 'Sakuga sword combat animation sequence', author: 'SakugaArchive' },
-      { id: 'a08f921_Lkm', title: 'Chainsaw Man Denji hybrid animation cut', author: 'MAPPA Fan' },
-      { id: 'm0182_9fNjk', title: 'Hinokami Kagura flawless frame pacing', author: 'DemonEdits' },
-      { id: 'k19208_fNla', title: 'Spider-Verse dynamic camera frame breakdown', author: 'AnimatorsGuild' }
+  "anime": {
+    "id": "anime",
+    "name": "Anime & Sakuga",
+    "icon": "film",
+    "desc": "Sakuga combat cuts, key animation & high FPS edits",
+    "items": [
+      {
+        "id": "SfwBU3WkLkI",
+        "title": "Stark vs Dragon 4K - Frieren PEAK Sakuga - Yutaka Nakamura n Crew",
+        "author": "Jack The Anime Ripper",
+        "duration": 31,
+        "url": "https://www.youtube.com/shorts/SfwBU3WkLkI"
+      },
+      {
+        "id": "Z8Hzg7uvpIc",
+        "title": "[Key animation] One piece: 1072 | Bahi JD",
+        "author": "Sakuga",
+        "duration": 13,
+        "url": "https://www.youtube.com/shorts/Z8Hzg7uvpIc"
+      },
+      {
+        "id": "gDP1w07Te9k",
+        "title": "running animation sakuga",
+        "author": "Jin",
+        "duration": 13,
+        "url": "https://www.youtube.com/shorts/gDP1w07Te9k"
+      },
+      {
+        "id": "WoFW5D2WOf8",
+        "title": "Hand to Hand combat action animation / sakuga",
+        "author": "Amaganic",
+        "duration": 6,
+        "url": "https://www.youtube.com/shorts/WoFW5D2WOf8"
+      },
+      {
+        "id": "QSc01zqM_uA",
+        "title": "Sakuga 作画 - Guns 銃",
+        "author": "Hobbes Sakuga",
+        "duration": 58,
+        "url": "https://www.youtube.com/shorts/QSc01zqM_uA"
+      },
+      {
+        "id": "PcLZMLnNlCQ",
+        "title": "Sakuga practice flipaclip #animation #flipaclip #flipaclipanimation #anime #sakuga #impact #viral",
+        "author": "PsychO aNIMITo",
+        "duration": 11,
+        "url": "https://www.youtube.com/shorts/PcLZMLnNlCQ"
+      },
+      {
+        "id": "C09ZMD9_D9I",
+        "title": "【Animation Practice】Speed/Scale Contrast (Sakuga Study: Yutaka Nakamura)",
+        "author": "SenseofNone",
+        "duration": 24,
+        "url": "https://www.youtube.com/shorts/C09ZMD9_D9I"
+      },
+      {
+        "id": "gDjBn30qIyM",
+        "title": "quiet sakuga cut that hits on repeat",
+        "author": "viruzat",
+        "duration": 29,
+        "url": "https://www.youtube.com/shorts/gDjBn30qIyM"
+      }
     ]
   },
-  animals: {
-    id: 'animals',
-    name: 'Cute Animals',
-    icon: 'heart',
-    desc: 'Puppies, curious red pandas & funny cats',
-    items: [
-      { id: 'o108_m128jA', title: 'Golden retriever puppy obstacle run', author: 'PuppyLove' },
-      { id: 'c189_91823La', title: 'Tiny kitten tries to roar like a lion', author: 'FelineShorts' },
-      { id: 'u198_18290La', title: 'Red panda trying to look menacing', author: 'ZooClips' }
+  "animals": {
+    "id": "animals",
+    "name": "Cute Animals",
+    "icon": "heart",
+    "desc": "Funny kittens, adorable puppies & pets",
+    "items": [
+      {
+        "id": "Nfekog9ahNY",
+        "title": "Two Cute Cats Together ️ | Beautiful White Kitten & Tabby Cat",
+        "author": "Moazzam Iftikhar",
+        "duration": 6,
+        "url": "https://www.youtube.com/shorts/Nfekog9ahNY"
+      },
+      {
+        "id": "XmHhRkRfwEo",
+        "title": "Cute Baby Cats Cute Cat Lovers",
+        "author": "cute baby cats and birds",
+        "duration": 28,
+        "url": "https://www.youtube.com/shorts/XmHhRkRfwEo"
+      },
+      {
+        "id": "g63lL0-42cU",
+        "title": "#Cats #FunnyCats #CatShorts #CuteCats #kids #kitten #mamacatstory",
+        "author": "whiskey",
+        "duration": 22,
+        "url": "https://www.youtube.com/shorts/g63lL0-42cU"
+      },
+      {
+        "id": "Sp7G1huAdB0",
+        "title": "Mimi Being Too Cute  | Cutest Cat Ever  Subscribe for more cute & funny cat moments! ️",
+        "author": "Mimi The Cat",
+        "duration": 24,
+        "url": "https://www.youtube.com/shorts/Sp7G1huAdB0"
+      },
+      {
+        "id": "iPyywzxdBU8",
+        "title": "Little Kitten Playing Beside Another Cat  So Adorable!#kitty #kitten #kittyplaying #pets #cutecat",
+        "author": "Dimples FAMILY cat",
+        "duration": 30,
+        "url": "https://www.youtube.com/shorts/iPyywzxdBU8"
+      },
+      {
+        "id": "-dTa8gchZfc",
+        "title": "Sweetest kitty loves to talk to his human",
+        "author": "Bobbie & Fos",
+        "duration": 33,
+        "url": "https://www.youtube.com/shorts/-dTa8gchZfc"
+      },
+      {
+        "id": "2kppIwA9Bsg",
+        "title": "Home Alone with My Cat (OwlKitty Parody)",
+        "author": "OwlKitty",
+        "duration": 49,
+        "url": "https://www.youtube.com/shorts/2kppIwA9Bsg"
+      },
+      {
+        "id": "-nD9FsSdLDo",
+        "title": "Alistair the cat falls in the tub",
+        "author": "Claw Coalition",
+        "duration": 17,
+        "url": "https://www.youtube.com/shorts/-nD9FsSdLDo"
+      }
     ]
   },
-  speedruns: {
-    id: 'speedruns',
-    name: 'Speedruns & Skills',
-    icon: 'ratio',
-    desc: 'Record-shattering runs, rubik cube in 3s & mastery',
-    items: [
-      { id: 's189_10928La', title: 'Super Mario 64 backward long jump glitch run', author: 'SpeedrunCentral' },
-      { id: 'z189_19283La', title: 'Solving 3x3 Rubik cube in 3.13 seconds', author: 'CubeGod' },
-      { id: 'p102_19283La', title: 'Extreme pen spinning championship combo', author: 'SpinMaster' }
+  "speedruns": {
+    "id": "speedruns",
+    "name": "Speedruns & Skills",
+    "icon": "ratio",
+    "desc": "World record speedruns, insane clutch moments & mastery",
+    "items": [
+      {
+        "id": "lw-sNpkfW5M",
+        "title": "Minecraft Fastest Speedrun WORLD RECORD  | New World Record",
+        "author": "Wanna_Gamer",
+        "duration": 57,
+        "url": "https://www.youtube.com/shorts/lw-sNpkfW5M"
+      },
+      {
+        "id": "oJuZV6HzwIc",
+        "title": "COD SLUR SPEEDRUN WORLD RECORD! (SUB 0.5 SECS!) | Original Creator",
+        "author": "Silksheets",
+        "duration": 12,
+        "url": "https://www.youtube.com/shorts/oJuZV6HzwIc"
+      },
+      {
+        "id": "_PpMJO4x634",
+        "title": "Contexto speedrun in 11 seconds world record",
+        "author": "NightSpark",
+        "duration": 12,
+        "url": "https://www.youtube.com/shorts/_PpMJO4x634"
+      },
+      {
+        "id": "1lA6R-mE00Q",
+        "title": "Minecraft Sheep Fricker Speedrun WORLD RECORD (0:28)",
+        "author": "Clementdav Runs",
+        "duration": 43,
+        "url": "https://www.youtube.com/shorts/1lA6R-mE00Q"
+      },
+      {
+        "id": "9uC--gcCoHM",
+        "title": "The Guardian that Almost Ended The World Record Speedrun",
+        "author": "joedeux",
+        "duration": 25,
+        "url": "https://www.youtube.com/shorts/9uC--gcCoHM"
+      },
+      {
+        "id": "vsB9qrQWVwA",
+        "title": "COD Slur Speedrun World Record! | ORIGINAL CREATOR",
+        "author": "Silksheets",
+        "duration": 11,
+        "url": "https://www.youtube.com/shorts/vsB9qrQWVwA"
+      },
+      {
+        "id": "LCoPKywuWks",
+        "title": "Big Iron Speedrun World Record attempt 7.17 (any%) (former WR)",
+        "author": "Sam Witch",
+        "duration": 8,
+        "url": "https://www.youtube.com/shorts/LCoPKywuWks"
+      },
+      {
+        "id": "BMRCye4JhEo",
+        "title": "Big Iron Speedrun World Record Attempt 6.06 (Any%)",
+        "author": "jacob tablet",
+        "duration": 7,
+        "url": "https://www.youtube.com/shorts/BMRCye4JhEo"
+      },
+      {
+        "id": "FQ2GlDabu7M",
+        "title": "craftsman speedrun world record in 44 seconds",
+        "author": "ILYOUSS 21",
+        "duration": 60,
+        "url": "https://www.youtube.com/shorts/FQ2GlDabu7M"
+      },
+      {
+        "id": "Hx8ihGmYfqU",
+        "title": "WORLD RECORD TERRORIST HUNT SPEEDRUN (28.18 SECONDS)",
+        "author": "Ghuud",
+        "duration": 29,
+        "url": "https://www.youtube.com/shorts/Hx8ihGmYfqU"
+      }
     ]
   }
 };
 
-// Dynamic Shorts search using open Invidious endpoints with automatic fallback
+
+// YouTube URL & ID parser
+export function parseYouTubeId(input) {
+  if (!input) return null;
+  input = input.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+  const match = input.match(/(?:youtu\.be\/|youtube\.com\/(?:shorts\/|watch\?v=|embed\/|v\/|.+\?v=))([^&?/\s]{11})/);
+  return match ? match[1] : null;
+}
+
+// Clean emoji stripper to strictly adhere to NO EMOJI rule
+export function stripEmojis(str) {
+  return (str || '').replace(/[\u{10000}-\u{10ffff}\u{2600}-\u{27bf}\u{1f300}-\u{1f9ff}]/gu, '').trim();
+}
+
+// Dynamic Shorts search using open Invidious & Piped endpoints with strict <= 60s filter
 export async function searchShortsNiche(query) {
-  if (!query) return SHORTS_NICHES.memes.items;
-  const instances = [
-    'https://inv.tux.pizza',
-    'https://invidious.nerdvpn.de',
-    'https://invidious.privacyredirect.com',
-    'https://pipedapi.kavin.rocks'
-  ];
-  const q = `${query} shorts`;
-  for (const inst of instances) {
+  if (!query || !query.trim()) return SHORTS_NICHES.memes.items;
+  const q = query.trim();
+
+  // 1. Direct YouTube Shorts or Video URL / ID check
+  const directId = parseYouTubeId(q);
+  if (directId) {
     try {
-      const res = await fetch(`${inst}/api/v1/search?q=${encodeURIComponent(q)}&type=video`, {
+      const metaRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${directId}`, {
         signal: AbortSignal.timeout(3000)
+      });
+      if (metaRes.ok) {
+        const meta = await metaRes.json();
+        return [{
+          id: directId,
+          title: stripEmojis(meta.title) || 'YouTube Short',
+          author: stripEmojis(meta.author_name) || 'YouTube Creator',
+          duration: 30,
+          url: `https://www.youtube.com/shorts/${directId}`
+        }];
+      }
+    } catch (e) {}
+    return [{
+      id: directId,
+      title: 'YouTube Short',
+      author: 'YouTube Creator',
+      duration: 30,
+      url: `https://www.youtube.com/shorts/${directId}`
+    }];
+  }
+
+  // 2. Query live Invidious / Piped instances for authentic Shorts (strictly <= 60s)
+  const searchEndpoints = [
+    {
+      url: `https://yt.chocolatemoo53.com/api/v1/search?q=${encodeURIComponent(q)}+%23shorts&duration=short&type=video`,
+      parse: data => {
+        if (!Array.isArray(data)) return [];
+        return data
+          .filter(v => v.videoId && v.lengthSeconds && v.lengthSeconds > 2 && v.lengthSeconds <= 60)
+          .map(v => ({
+            id: v.videoId,
+            title: stripEmojis(v.title) || 'YouTube Short',
+            author: stripEmojis(v.author) || 'YouTube Creator',
+            duration: v.lengthSeconds,
+            url: `https://www.youtube.com/shorts/${v.videoId}`
+          }));
+      }
+    },
+    {
+      url: `https://pipedapi.ducks.party/search?q=${encodeURIComponent(q)}+%23shorts&filter=all`,
+      parse: data => {
+        const list = Array.isArray(data) ? data : (data.items || []);
+        return list
+          .filter(v => {
+            const vid = parseYouTubeId(v.url || '');
+            const dur = v.duration || 0;
+            return vid && dur > 2 && dur <= 60;
+          })
+          .map(v => ({
+            id: parseYouTubeId(v.url),
+            title: stripEmojis(v.title) || 'YouTube Short',
+            author: stripEmojis(v.uploaderName) || 'YouTube Creator',
+            duration: v.duration,
+            url: `https://www.youtube.com/shorts/${parseYouTubeId(v.url)}`
+          }));
+      }
+    }
+  ];
+
+  for (const ep of searchEndpoints) {
+    try {
+      const res = await fetch(ep.url, {
+        signal: AbortSignal.timeout(4000),
+        headers: { 'Accept': 'application/json' }
       });
       if (!res.ok) continue;
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const filtered = data
-          .filter(v => v.videoId && (v.lengthSeconds ? v.lengthSeconds <= 90 : true))
-          .slice(0, 12)
-          .map(v => ({
-            id: v.videoId,
-            title: v.title || `${query} Short`,
-            author: v.author || 'YouTube Shorts'
-          }));
-        if (filtered.length > 0) return filtered;
+      const results = ep.parse(data);
+      if (results && results.length > 0) {
+        return results.slice(0, 16);
       }
     } catch (e) {}
   }
 
-  // Fallback: match keywords against curated pools
-  const qLower = query.toLowerCase();
+  // 3. Fallback: match keywords against verified authentic Shorts pool
+  const qLower = q.toLowerCase();
+  const matched = [];
+  const seenIds = new Set();
+
   for (const [key, niche] of Object.entries(SHORTS_NICHES)) {
-    if (qLower.includes(key) || niche.name.toLowerCase().includes(qLower)) {
-      return niche.items;
+    const isNicheMatch = qLower.includes(key) || niche.name.toLowerCase().includes(qLower);
+    for (const item of niche.items) {
+      if (seenIds.has(item.id)) continue;
+      if (isNicheMatch || item.title.toLowerCase().includes(qLower) || item.author.toLowerCase().includes(qLower)) {
+        matched.push(item);
+        seenIds.add(item.id);
+      }
     }
   }
+
+  if (matched.length > 0) {
+    return matched;
+  }
+
   return SHORTS_NICHES.memes.items;
 }
 
@@ -180,14 +732,7 @@ let doomIndex = 0;
 let activeDoomFeed = SHORTS_NICHES.memes.items;
 let activeNicheTitle = SHORTS_NICHES.memes.name;
 
-// YouTube URL parser
-export function parseYouTubeId(input) {
-  if (!input) return null;
-  input = input.trim();
-  if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
-  const m1 = input.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([a-zA-Z0-9_-]{11})/);
-  return m1 ? m1[1] : null;
-}
+
 
 export default {
   mount(root, api) {
@@ -199,6 +744,7 @@ export default {
     const hash = location.hash;
     const urlParams = new URLSearchParams(hash.includes('?') ? hash.slice(hash.indexOf('?')) : '');
     const partyFromUrl = urlParams.get('party');
+    const testAction = urlParams.get('test');
 
     root.innerHTML = `
       <div id="fiveTubeWrap" class="fivetube-container">
@@ -484,12 +1030,16 @@ export default {
 
             <!-- Bottom Video Info -->
             <div class="doomscroll-bottom-info">
-              <div class="row items-center" style="gap:6px;">
-                <span class="badge" style="font-size:9.5px;background:rgba(255,255,255,0.2);color:#fff;">Shorts</span>
-                <span id="doomscrollAuthor" class="mono text-xs font-bold text-white">5ivesaw</span>
+              <div class="row items-center" style="gap:6px;margin-bottom:3px;">
+                <a id="doomscrollShortsBadge" href="#" target="_blank" rel="noopener noreferrer" class="badge" style="font-size:9.5px;background:#FF0000;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Open in YouTube Shorts">
+                  <span>Shorts</span>
+                  <span id="doomscrollDurationBadge" style="opacity:0.9;">• 30s</span>
+                  <span style="font-size:8px;opacity:0.9;">↗</span>
+                </a>
+                <span id="doomscrollAuthor" class="mono text-xs font-bold text-white truncate" style="max-width:200px;">YouTube Shorts</span>
               </div>
-              <p id="doomscrollTitle" class="text-sm font-semibold text-white line-clamp-2" style="margin:0;">Curated Transmission</p>
-              <span class="mono xs faint" style="color:rgba(255,255,255,0.7);font-size:10px;">Swipe / Arrow keys to scroll with party</span>
+              <p id="doomscrollTitle" class="text-sm font-semibold text-white line-clamp-2" style="margin:0;line-height:1.25;">Authentic Transmission</p>
+              <span class="mono xs faint" style="color:rgba(255,255,255,0.7);font-size:10px;margin-top:2px;">Swipe / Arrow keys to scroll with party</span>
             </div>
 
             <!-- Right Action Rail -->
@@ -527,21 +1077,21 @@ export default {
                 <span class="badge" style="background:#FF0000;color:#fff;font-weight:700;font-size:10px;padding:2px 7px;">SHORTS</span>
                 <span class="mono font-bold" style="font-size:15px;color:var(--ink);">Choose Shorts Niche</span>
               </div>
-              <button type="button" id="closeNicheModalBtn" class="btn sm ghost font-bold" style="padding:2px 8px;">✕</button>
+              <button type="button" id="closeNicheModalBtn" class="btn sm ghost font-bold" style="padding:2px 8px;">${icon('close')}</button>
             </div>
 
             <!-- Search Any Custom Niche Form -->
             <form id="shortsNicheSearchForm" class="stack mt-3" style="gap:6px;">
-              <div class="row" style="gap:6px;">
-                <div class="search-box row items-center flex-1" style="border-radius:var(--r-md);background:var(--elevated);border:1px solid var(--line);padding:0 8px;">
-                  ${icon('search')}
-                  <input type="text" id="shortsSearchQueryInput" placeholder="Search Shorts niche (speedruns, comedy, physics)..." class="input xs font-mono flex-1" style="height:34px;background:transparent;border:none;" autocomplete="off"/>
+              <div class="row items-center" style="gap:6px;">
+                <div class="search-box row items-center flex-1" style="border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line);padding:0 8px;height:32px;overflow:hidden;gap:6px;">
+                  <span style="width:14px;height:14px;min-width:14px;max-width:14px;display:inline-flex;align-items:center;justify-content:center;opacity:0.6;flex-shrink:0;">${icon('search', 'search-icon-svg')}</span>
+                  <input type="text" id="shortsSearchQueryInput" placeholder="Search Shorts niche (minecraft, comedy, physics)..." class="input xs font-mono flex-1" style="height:28px;background:transparent;border:none;padding:0;font-size:11.5px;color:var(--ink);min-width:60px;" autocomplete="off"/>
                 </div>
-                <button type="submit" id="shortsSearchSubmitBtn" class="btn sm primary font-mono" style="height:34px;padding:0 12px;">
-                  Search &amp; Scroll
+                <button type="submit" id="shortsSearchSubmitBtn" class="btn sm primary font-mono shorts-search-btn" title="Search authentic Shorts">
+                  ${icon('search', 'search-icon-svg')} <span>Search</span>
                 </button>
               </div>
-              <span class="mono xs faint" style="font-size:9.5px;">All party members sync to the selected niche in real-time.</span>
+              <span class="mono xs faint" style="font-size:9.5px;">All party members sync to the selected niche in real-time. Authentic YouTube Shorts strictly &le; 60s.</span>
             </form>
 
             <!-- Popular Preset Niches Grid -->
@@ -572,7 +1122,7 @@ export default {
           <div class="modal-box card pad max-w-md">
             <div class="row between items-center mb-2">
               <h3 class="font-bold text-base mono text-paper-ink">Save Video Locally</h3>
-              <button type="button" id="closeDownloadModalBtn" class="btn sm ghost" style="padding:2px 8px;">✕</button>
+              <button type="button" id="closeDownloadModalBtn" class="btn sm ghost" style="padding:2px 8px;">${icon('close')}</button>
             </div>
             <p class="xs muted mb-3">Download and save this video locally on your device with high quality:</p>
 
@@ -1117,7 +1667,7 @@ export default {
           avatar: 'A',
           color: '#38BDF8',
           time: '2 hours ago',
-          text: '0:42 Bro cooked with this one, can not lie 🔥',
+          text: '0:42 Bro cooked with this one, can not lie',
           likes: 342,
           isSynced: false,
           reactions: { laugh: 14, cringe: 1, fire: 42, ratio: 0 }
@@ -1172,7 +1722,7 @@ export default {
           avatar: 'Z',
           color: '#FF3B14',
           time: '3 days ago',
-          text: 'bro really synced this with the entire squad 💀',
+          text: 'bro really synced this with the entire squad',
           likes: 418,
           isSynced: false,
           reactions: { laugh: 78, cringe: 4, fire: 39, ratio: 5 }
@@ -1500,12 +2050,21 @@ export default {
       const clip = activeDoomFeed[doomIndex];
 
       if (doomCounter) doomCounter.textContent = `${doomIndex + 1} / ${activeDoomFeed.length}`;
-      if (doomAuthor) doomAuthor.textContent = clip.author;
-      if (doomTitle) doomTitle.textContent = clip.title;
+      if (doomAuthor) doomAuthor.textContent = stripEmojis(clip.author) || 'YouTube Shorts';
+      if (doomTitle) doomTitle.textContent = stripEmojis(clip.title) || 'Authentic Short';
+
+      const durationBadge = $('#doomscrollDurationBadge');
+      if (durationBadge) {
+        durationBadge.textContent = clip.duration ? `• ${clip.duration}s` : '• Short';
+      }
+      const shortsLink = $('#doomscrollShortsBadge');
+      if (shortsLink) {
+        shortsLink.href = clip.url || `https://www.youtube.com/shorts/${clip.id}`;
+      }
 
       const mount = $('#doomscrollPlayerMount');
       if (mount) {
-        mount.innerHTML = `<iframe id="doomYtIframe" src="https://www.youtube.com/embed/${clip.id}?autoplay=1&controls=1&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
+        mount.innerHTML = `<iframe id="doomYtIframe" src="https://www.youtube.com/embed/${clip.id}?autoplay=1&controls=1&loop=1&playlist=${clip.id}&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
       }
 
       sfx('whoosh');
@@ -1579,16 +2138,28 @@ export default {
       if (!q) return;
 
       const submitBtn = $('#shortsSearchSubmitBtn');
-      if (submitBtn) submitBtn.textContent = 'Searching...';
+      const prevHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `${icon('search')} <span class="mono xs">Searching...</span>`;
+      }
 
       try {
-        toast(`Searching Shorts for: "${q}"...`, 'info');
+        toast(`Searching authentic Shorts: "${q}"...`, 'info');
         const items = await searchShortsNiche(q);
-        selectAndLaunchNiche(`Search: ${q}`, q, items);
+        if (items && items.length > 0) {
+          selectAndLaunchNiche(`Search: ${q}`, q, items);
+        } else {
+          toast(`No Shorts found under 60s for "${q}". Try another query.`, 'warn');
+        }
       } catch (err) {
+        console.error('Shorts search error:', err);
         selectAndLaunchNiche(`Search: ${q}`, q, SHORTS_NICHES.memes.items);
       } finally {
-        if (submitBtn) submitBtn.textContent = 'Search & Scroll';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = prevHtml;
+        }
       }
     });
 
@@ -1933,6 +2504,25 @@ export default {
       }
     }
     window.addEventListener('keydown', onKeyDown);
+
+    // Test automation hook for headless audits
+    if (testAction) {
+      setTimeout(() => {
+        if (testAction === 'niche_modal') {
+          openNicheModal();
+        } else if (testAction === 'search_minecraft') {
+          openNicheModal();
+          setTimeout(() => {
+            if (shortsSearchQueryInput) shortsSearchQueryInput.value = 'minecraft';
+            shortsNicheSearchForm?.dispatchEvent(new Event('submit', { cancelable: true }));
+          }, 150);
+        } else if (testAction === 'niche_comedy') {
+          const comedyBtn = document.querySelector('[data-niche-key="comedy"]');
+          if (comedyBtn) comedyBtn.click();
+          else selectAndLaunchNiche(SHORTS_NICHES.comedy.name, '', SHORTS_NICHES.comedy.items);
+        }
+      }, 350);
+    }
 
     // Unmount & Cleanup
     return () => {

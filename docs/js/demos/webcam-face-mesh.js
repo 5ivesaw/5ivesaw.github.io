@@ -220,11 +220,18 @@ export default {
     // Mouse target tracking
     canvas.addEventListener('mousemove', e => {
       if (state.sourceType === 'synthetic') {
-        const rect = canvas.getBoundingClientRect();
-        state.targetX = e.clientX - rect.left;
-        state.targetY = e.clientY - rect.top;
+        state.targetX = e.offsetX;
+        state.targetY = e.offsetY;
       }
-    });
+    }, { passive: true });
+
+    const LANDMARK_OFFSETS = [
+      [-50, -20], [-25, -30], [25, -30], [50, -20], // Forehead
+      [-35, 0], [-15, 0], [15, 0], [35, 0], // Eyes
+      [0, 15], [-12, 25], [12, 25], // Nose
+      [-25, 45], [25, 45], [0, 65] // Chin
+    ];
+    const meshPoints = new Float32Array(LANDMARK_OFFSETS.length * 2);
 
     let frameCount = 0;
 
@@ -275,12 +282,14 @@ export default {
 
         ctx.strokeStyle = 'rgba(255,255,255,0.04)';
         ctx.lineWidth = 1;
+        ctx.beginPath();
         for (let x = 0; x < w; x += 40) {
-          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+          ctx.moveTo(x, 0); ctx.lineTo(x, h);
         }
         for (let y = 0; y < h; y += 40) {
-          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+          ctx.moveTo(0, y); ctx.lineTo(w, y);
         }
+        ctx.stroke();
 
         // Animated target hover
         state.targetX += Math.sin(frameCount * 0.03) * 1.5;
@@ -349,24 +358,27 @@ export default {
       }
 
       if (state.showMesh) {
-        // Wireframe Facial Mesh Landmark Lines
-        const points = [
-          [tx - 50, ty - 20], [tx - 25, ty - 30], [tx + 25, ty - 30], [tx + 50, ty - 20], // Forehead
-          [tx - 35, ty], [tx - 15, ty], [tx + 15, ty], [tx + 35, ty], // Eyes
-          [tx, ty + 15], [tx - 12, ty + 25], [tx + 12, ty + 25], // Nose
-          [tx - 25, ty + 45], [tx + 25, ty + 45], [tx, ty + 65] // Chin
-        ];
+        // Wireframe Facial Mesh Landmark Lines (Zero-allocation using pre-computed offsets)
+        const numPts = LANDMARK_OFFSETS.length;
+        for (let i = 0; i < numPts; i++) {
+          meshPoints[i * 2] = tx + LANDMARK_OFFSETS[i][0];
+          meshPoints[i * 2 + 1] = ty + LANDMARK_OFFSETS[i][1];
+        }
 
         ctx.strokeStyle = theme.stroke;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        for (let i = 0; i < points.length; i++) {
-          ctx.arc(points[i][0], points[i][1], 2, 0, Math.PI * 2);
-          for (let j = i + 1; j < points.length; j++) {
-            const d = Math.hypot(points[i][0] - points[j][0], points[i][1] - points[j][1]);
+        for (let i = 0; i < numPts; i++) {
+          const px = meshPoints[i * 2];
+          const py = meshPoints[i * 2 + 1];
+          ctx.arc(px, py, 2, 0, Math.PI * 2);
+          for (let j = i + 1; j < numPts; j++) {
+            const qx = meshPoints[j * 2];
+            const qy = meshPoints[j * 2 + 1];
+            const d = Math.hypot(px - qx, py - qy);
             if (d < 50) {
-              ctx.moveTo(points[i][0], points[i][1]);
-              ctx.lineTo(points[j][0], points[j][1]);
+              ctx.moveTo(px, py);
+              ctx.lineTo(qx, qy);
             }
           }
         }

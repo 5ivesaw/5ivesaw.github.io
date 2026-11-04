@@ -247,6 +247,8 @@ export default {
     resize();
 
     const fftBuf = new Uint8Array(128);
+    const projX = new Float32Array(ROWS * COLS);
+    const projY = new Float32Array(ROWS * COLS);
 
     // 3D Render Loop
     function render() {
@@ -318,38 +320,39 @@ export default {
         }
       }
 
-      // 3D Perspective Projection
+      // 3D Perspective Projection (Pre-calculated transform cache)
       const fov = 420;
       const cellW = (w * 1.4) / COLS;
       const cellD = 35;
       const originX = w / 2;
       const originY = h * 0.52;
 
-      function project(c, r, zVal) {
-        const x3d = (c - COLS / 2) * cellW;
-        const y3d = zVal;
+      const cosY = Math.cos(state.cameraAngleY);
+      const sinY = Math.sin(state.cameraAngleY);
+      const cosX = Math.cos(state.cameraAngleX);
+      const sinX = Math.sin(state.cameraAngleX);
+
+      // Pre-compute 3D projections once per vertex
+      for (let r = 0; r < ROWS; r++) {
         const z3d = (ROWS - r) * cellD;
+        const rowTerrain = terrain[r];
+        for (let c = 0; c < COLS; c++) {
+          const x3d = (c - COLS / 2) * cellW;
+          const y3d = -rowTerrain[c];
 
-        // Apply camera tilt
-        const cosY = Math.cos(state.cameraAngleY);
-        const sinY = Math.sin(state.cameraAngleY);
-        const cosX = Math.cos(state.cameraAngleX);
-        const sinX = Math.sin(state.cameraAngleX);
+          const rx = x3d * cosY - z3d * sinY;
+          const rz = x3d * sinY + z3d * cosY;
+          const ry = y3d * cosX - rz * sinX;
+          const rz2 = y3d * sinX + rz * cosX + 350;
 
-        const rx = x3d * cosY - z3d * sinY;
-        const rz = x3d * sinY + z3d * cosY;
-        const ry = y3d * cosX - rz * sinX;
-        const rz2 = y3d * sinX + rz * cosX + 350;
-
-        const scale = fov / Math.max(10, rz2);
-        return {
-          x: originX + rx * scale,
-          y: originY + ry * scale,
-          depth: rz2
-        };
+          const scale = fov / Math.max(10, rz2);
+          const idx = r * COLS + c;
+          projX[idx] = originX + rx * scale;
+          projY[idx] = originY + ry * scale;
+        }
       }
 
-      // Draw Grid Mesh
+      // Draw Grid Mesh from pre-computed projection buffer
       ctx.save();
       ctx.lineWidth = 1.4;
       ctx.strokeStyle = theme.grid;
@@ -360,11 +363,11 @@ export default {
 
       // Horizontal lines
       for (let r = 0; r < ROWS; r++) {
+        const offset = r * COLS;
         ctx.beginPath();
-        for (let c = 0; c < COLS; c++) {
-          const p = project(c, r, -terrain[r][c]);
-          if (c === 0) ctx.moveTo(p.x, p.y);
-          else ctx.lineTo(p.x, p.y);
+        ctx.moveTo(projX[offset], projY[offset]);
+        for (let c = 1; c < COLS; c++) {
+          ctx.lineTo(projX[offset + c], projY[offset + c]);
         }
         ctx.stroke();
       }
@@ -372,10 +375,10 @@ export default {
       // Longitudinal lines
       for (let c = 0; c < COLS; c++) {
         ctx.beginPath();
-        for (let r = 0; r < ROWS; r++) {
-          const p = project(c, r, -terrain[r][c]);
-          if (r === 0) ctx.moveTo(p.x, p.y);
-          else ctx.lineTo(p.x, p.y);
+        ctx.moveTo(projX[c], projY[c]);
+        for (let r = 1; r < ROWS; r++) {
+          const idx = r * COLS + c;
+          ctx.lineTo(projX[idx], projY[idx]);
         }
         ctx.stroke();
       }

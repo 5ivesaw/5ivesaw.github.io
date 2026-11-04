@@ -236,7 +236,7 @@ export default {
     const uMusicBass = gl.getUniformLocation(prog, 'u_music_bass');
 
     function resize() {
-      fitCanvas(canvas);
+      fitCanvas(canvas, 1);
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uRes, canvas.width, canvas.height);
     }
@@ -244,13 +244,14 @@ export default {
     resize();
 
     // Mouse drag
-    canvas.addEventListener('pointerdown', e => {
+    const onPointerDown = e => {
       state.isDragging = true;
       state.lastMouseX = e.clientX;
       state.lastMouseY = e.clientY;
-    });
+    };
+    canvas.addEventListener('pointerdown', onPointerDown);
 
-    window.addEventListener('pointermove', e => {
+    const onPointerMove = e => {
       if (!state.isDragging) return;
       const dx = e.clientX - state.lastMouseX;
       const dy = e.clientY - state.lastMouseY;
@@ -258,11 +259,13 @@ export default {
       state.rotY += dy * 0.005;
       state.lastMouseX = e.clientX;
       state.lastMouseY = e.clientY;
-    });
+    };
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
 
-    window.addEventListener('pointerup', () => {
+    const onPointerUp = () => {
       state.isDragging = false;
-    });
+    };
+    window.addEventListener('pointerup', onPointerUp, { passive: true });
 
     $$('#rmShapeSeg button', root).forEach(btn => {
       btn.addEventListener('click', () => {
@@ -287,6 +290,7 @@ export default {
     });
 
     const pulseBadge = $('#rmPulseIndicator', root);
+    let lastPulseState = null;
     let startTime = performance.now();
 
     function render() {
@@ -302,8 +306,12 @@ export default {
       gl.uniform1f(uMusicBass, bass);
 
       if (pulseBadge && music.pulse) {
-        pulseBadge.textContent = music.pulse.isPlaying ? 'PULSE ACTIVE ⚡' : 'STANDBY';
-        pulseBadge.style.color = music.pulse.isPlaying ? '#00F0FF' : 'var(--faint)';
+        const isPlaying = music.pulse.isPlaying;
+        if (lastPulseState !== isPlaying) {
+          lastPulseState = isPlaying;
+          pulseBadge.textContent = isPlaying ? 'PULSE ACTIVE ⚡' : 'STANDBY';
+          pulseBadge.style.color = isPlaying ? '#00F0FF' : 'var(--faint)';
+        }
       }
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -315,6 +323,9 @@ export default {
     return () => {
       if (state.animId) cancelAnimationFrame(state.animId);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointerdown', onPointerDown);
       const s = document.getElementById('demo-raymarch-style');
       if (s) s.remove();
     };

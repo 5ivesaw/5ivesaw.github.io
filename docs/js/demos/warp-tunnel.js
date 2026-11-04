@@ -267,7 +267,7 @@ export default {
       const cx = w / 2 - state.shipX * 0.35;
       const cy = h / 2 - state.shipY * 0.35;
 
-      // Draw Starfield Streaks
+      // Draw Starfield Streaks (batched rendering)
       ctx.fillStyle = theme.star;
       for (let i = 0; i < STAR_COUNT; i++) {
         const idx = i * 3;
@@ -284,9 +284,7 @@ export default {
 
         if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
           const starSize = Math.max(1, (1 - sz / 2000) * 3 * (1 + kick));
-          ctx.beginPath();
-          ctx.arc(sx, sy, starSize, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.fillRect(sx, sy, starSize, starSize);
         }
       }
 
@@ -315,8 +313,13 @@ export default {
         ctx.strokeStyle = theme.ring;
         ctx.globalAlpha = alpha;
         ctx.lineWidth = Math.max(1.2, 3.5 * scale * (1 + kick * 0.5));
-        ctx.shadowColor = theme.glow;
-        ctx.shadowBlur = kick > 0.6 ? 16 : 6;
+        // Selective glow only on foreground rings when kick hits
+        if (kick > 0.6 && i < 6) {
+          ctx.shadowColor = theme.glow;
+          ctx.shadowBlur = 12;
+        } else {
+          ctx.shadowBlur = 0;
+        }
 
         ctx.beginPath();
         let sides = 6;

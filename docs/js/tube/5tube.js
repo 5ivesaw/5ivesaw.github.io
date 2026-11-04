@@ -1083,12 +1083,12 @@ export default {
             <!-- Search Any Custom Niche Form -->
             <form id="shortsNicheSearchForm" class="stack mt-3" style="gap:6px;">
               <div class="row items-center" style="gap:6px;">
-                <div class="search-box row items-center flex-1" style="border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line);padding:0 8px;height:32px;">
-                  <span style="opacity:0.5;display:inline-flex;align-items:center;">${icon('search')}</span>
-                  <input type="text" id="shortsSearchQueryInput" placeholder="Search Shorts niche (minecraft, comedy, physics)..." class="input xs font-mono flex-1" style="height:28px;background:transparent;border:none;padding:0 6px;font-size:11.5px;color:var(--ink);" autocomplete="off"/>
+                <div class="search-box row items-center flex-1" style="border-radius:var(--r-sm);background:var(--surface);border:1px solid var(--line);padding:0 8px;height:32px;overflow:hidden;gap:6px;">
+                  <span style="width:14px;height:14px;min-width:14px;max-width:14px;display:inline-flex;align-items:center;justify-content:center;opacity:0.6;flex-shrink:0;">${icon('search', 'search-icon-svg')}</span>
+                  <input type="text" id="shortsSearchQueryInput" placeholder="Search Shorts niche (minecraft, comedy, physics)..." class="input xs font-mono flex-1" style="height:28px;background:transparent;border:none;padding:0;font-size:11.5px;color:var(--ink);min-width:60px;" autocomplete="off"/>
                 </div>
                 <button type="submit" id="shortsSearchSubmitBtn" class="btn sm primary font-mono shorts-search-btn" title="Search authentic Shorts">
-                  ${icon('search')} <span>Search</span>
+                  ${icon('search', 'search-icon-svg')} <span>Search</span>
                 </button>
               </div>
               <span class="mono xs faint" style="font-size:9.5px;">All party members sync to the selected niche in real-time. Authentic YouTube Shorts strictly &le; 60s.</span>

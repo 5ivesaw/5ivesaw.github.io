@@ -6,7 +6,7 @@ import {
 import { sfx } from './core/sfx.js';
 import { music, thumb } from './core/music.js';
 import { TOOLS, DEMOS } from './registry.js';
-import fiveTube from './tube/5tube.js';
+import fiveTube from './tube/5tube.js?v=2.5';
 import { initContextMenu } from './core/context-menu.js';
 import { initCustomCursor } from './core/cursor.js';
 import { initMusicVibeReactor } from './core/vibe-reactor.js';

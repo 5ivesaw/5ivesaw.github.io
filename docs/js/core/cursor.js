@@ -1,33 +1,14 @@
-// Music-Reactive Custom Cursor Engine — by 5IVESAW
-// Precision pointer with trailing spring aura, orbital music visualizer satellites, click ripples & beat shockwaves.
+// Music-Reactive Ambient Cursor Aura — by 5IVESAW
+// Native hardware cursor preserved for 0ms zero-lag response + GPU-accelerated music reactive aura.
 import { music } from './music.js';
 
 export function initCustomCursor() {
-  // Disable on touch-only mobile devices
-  if (window.matchMedia('(pointer: coarse)').matches) return;
+  // Disable on touch-only mobile devices or reduced motion
+  if (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const style = document.createElement('style');
   style.id = 'cursor-style';
   style.textContent = `
-    @media (pointer: fine) {
-      body, a, button, input, textarea, [role="button"] {
-        cursor: none !important;
-      }
-    }
-    .c-dot {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 7px;
-      height: 7px;
-      background: var(--accent);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 99999;
-      transform: translate(-50%, -50%);
-      transition: transform 0.05s ease-out, background-color 0.12s ease;
-      box-shadow: 0 0 8px var(--accent);
-    }
     .c-ring {
       position: fixed;
       top: 0;
@@ -38,13 +19,13 @@ export function initCustomCursor() {
       border-radius: 50%;
       pointer-events: none;
       z-index: 99998;
-      transform: translate(-50%, -50%);
       opacity: 0.65;
+      will-change: transform, width, height;
       transition: width 0.18s var(--ease-spring), height 0.18s var(--ease-spring), border-color 0.2s ease, opacity 0.2s ease;
     }
     .c-ring.hovering {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       background: rgba(255, 59, 20, 0.08);
       border-color: var(--ink);
       opacity: 0.95;
@@ -57,6 +38,7 @@ export function initCustomCursor() {
       height: 1px;
       pointer-events: none;
       z-index: 99997;
+      will-change: transform;
     }
     .c-sat-dot {
       position: absolute;
@@ -64,9 +46,9 @@ export function initCustomCursor() {
       height: 4px;
       border-radius: 50%;
       background: var(--accent);
-      transform: translate(-50%, -50%);
       opacity: 0;
       transition: opacity 0.3s ease;
+      will-change: transform;
     }
     .c-ripple, .c-shockwave {
       position: fixed;
@@ -94,8 +76,6 @@ export function initCustomCursor() {
   `;
   document.head.appendChild(style);
 
-  const dot = document.createElement('div');
-  dot.className = 'c-dot';
   const ring = document.createElement('div');
   ring.className = 'c-ring';
   const satHost = document.createElement('div');
@@ -111,7 +91,6 @@ export function initCustomCursor() {
     satHost.appendChild(s);
   });
 
-  document.body.appendChild(dot);
   document.body.appendChild(ring);
   document.body.appendChild(satHost);
 
@@ -127,13 +106,11 @@ export function initCustomCursor() {
     lastMoveTime = performance.now();
     mouseX = e.clientX;
     mouseY = e.clientY;
-    dot.style.left = `${mouseX}px`;
-    dot.style.top = `${mouseY}px`;
 
     const target = e.target;
     isHovering = !!(target.closest('a, button, [role="button"], input, textarea, .tile, .btn, .theme-dot-btn'));
     ring.classList.toggle('hovering', isHovering);
-  });
+  }, { passive: true });
 
   window.addEventListener('mousedown', e => {
     lastMoveTime = performance.now();
@@ -143,17 +120,17 @@ export function initCustomCursor() {
     ripple.style.top = `${e.clientY}px`;
     document.body.appendChild(ripple);
     setTimeout(() => ripple.remove(), 450);
-  });
+  }, { passive: true });
 
-  // Music beat loop & spring physics
+  // Music beat loop & spring physics (GPU transform translate3d, 0 layout reflows)
   function loop() {
     const pulse = music.pulse || { isPlaying: false, kick: 0, snare: 0, bass: 0, energy: 0, hihat: 0 };
     const now = performance.now();
     const isIdle = (now - lastMoveTime) > 900;
 
-    // Smooth damped spring physics for trailing outer ring
-    const spring = isIdle ? 0.15 : 0.22;
-    const friction = isIdle ? 0.75 : 0.68;
+    // Damped spring physics for trailing accent aura
+    const spring = isIdle ? 0.18 : 0.32;
+    const friction = isIdle ? 0.72 : 0.64;
     const ax = (mouseX - ringX) * spring;
     const ay = (mouseY - ringY) * spring;
     ringVx = (ringVx + ax) * friction;
@@ -161,7 +138,7 @@ export function initCustomCursor() {
     ringX += ringVx;
     ringY += ringVy;
 
-    // Idle Dance offsets: when stationary, cursor bobs and grooves to music
+    // Idle Dance offsets: when stationary, cursor ring bobs and grooves to music
     let danceOffsetX = 0;
     let danceOffsetY = 0;
     let idleMusicPulse = 0;
@@ -170,20 +147,17 @@ export function initCustomCursor() {
       danceOffsetY = Math.sin(pulse.phase * 2.8) * (2.2 + pulse.kick * 4.5);
       danceOffsetX = Math.cos(pulse.phase * 1.4) * (1.8 + pulse.snare * 3.5);
       idleMusicPulse = pulse.kick * 12 + Math.sin(pulse.phase * 3) * 3;
-
-      // Micro-vibrate central dot to bass
-      dot.style.left = `${mouseX + danceOffsetX * 0.4}px`;
-      dot.style.top = `${mouseY + danceOffsetY * 0.4}px`;
     }
 
     const musicBoost = pulse.isPlaying ? (pulse.kick * 18 + pulse.bass * 8 + idleMusicPulse) : 0;
-    const baseSize = isHovering ? 48 : 28;
+    const baseSize = isHovering ? 44 : 28;
     const finalSize = baseSize + musicBoost;
 
     ring.style.width = `${finalSize}px`;
     ring.style.height = `${finalSize}px`;
-    ring.style.left = `${ringX + danceOffsetX}px`;
-    ring.style.top = `${ringY + danceOffsetY}px`;
+    const rx = ringX + danceOffsetX - finalSize / 2;
+    const ry = ringY + danceOffsetY - finalSize / 2;
+    ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
 
     // Emit music beat shockwave on peak kicks (especially during idle dance)
     if (pulse.isPlaying && pulse.kick > 0.68 && (now - lastShockTime > 260)) {
@@ -194,10 +168,6 @@ export function initCustomCursor() {
       shock.style.top = `${ringY + danceOffsetY}px`;
       document.body.appendChild(shock);
       setTimeout(() => shock.remove(), 380);
-
-      // Flash central dot on snare/drop
-      dot.style.backgroundColor = pulse.snare > 0.5 ? '#ffffff' : 'var(--accent)';
-      setTimeout(() => { dot.style.backgroundColor = 'var(--accent)'; }, 100);
     }
 
     if (pulse.isPlaying && pulse.kick > 0.35) {
@@ -206,19 +176,16 @@ export function initCustomCursor() {
       ring.style.boxShadow = 'none';
     }
 
-    // Orbiting mini visualizer satellites around cursor
-    if (pulse.isPlaying) {
+    // Orbiting mini visualizer satellites around cursor ring
+    if (pulse.isPlaying && mouseX > 0) {
       orbitAngle += isIdle ? (0.06 + pulse.energy * 0.08) : (0.04 + pulse.energy * 0.06);
       const satRadius = (finalSize / 2) + 9 + (pulse.bass * 7);
       satellites.forEach((sat, i) => {
         const theta = orbitAngle + (i * (Math.PI * 2 / 3));
-        const sx = ringX + danceOffsetX + Math.cos(theta) * satRadius;
-        const sy = ringY + danceOffsetY + Math.sin(theta) * satRadius;
-        sat.style.left = `${sx}px`;
-        sat.style.top = `${sy}px`;
+        const sx = ringX + danceOffsetX + Math.cos(theta) * satRadius - 2;
+        const sy = ringY + danceOffsetY + Math.sin(theta) * satRadius - 2;
+        sat.style.transform = `translate3d(${sx}px, ${sy}px, 0)`;
         sat.style.opacity = isIdle ? '0.9' : '0.75';
-        const satScale = (isIdle ? 0.9 : 0.8) + (pulse.bands ? (pulse.bands[i * 4] || 0) * 0.85 : pulse.kick * 0.6);
-        sat.style.transform = `translate(-50%, -50%) scale(${satScale})`;
       });
     } else {
       satellites.forEach(sat => { sat.style.opacity = '0'; });

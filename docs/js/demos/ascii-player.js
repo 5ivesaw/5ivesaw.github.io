@@ -250,25 +250,36 @@ export default {
       }
     }
 
-    function renderLoop() {
+    let canvasW = 0, canvasH = 0;
+    function handleResize() {
       const { w, h } = fitCanvas(canvas);
+      canvasW = w;
+      canvasH = h;
+    }
+    window.addEventListener('resize', handleResize, { passive: true });
+    handleResize();
+
+    const preFreqData = new Uint8Array(256);
+    const preTimeData = new Uint8Array(256);
+    let cachedAccentCol = cssVar('--accent') || '#942929';
+    onThemeChange(() => { cachedAccentCol = cssVar('--accent') || '#942929'; });
+
+    function renderLoop() {
+      const w = canvasW || 600;
+      const h = canvasH || 400;
       ctx.fillStyle = '#0c0a0b';
       ctx.fillRect(0, 0, w, h);
 
       const pulse = music.pulse;
-      let freqData = null;
-      let timeData = null;
+      let freqData = preFreqData;
+      let timeData = preTimeData;
 
       if (state.analyser) {
-        freqData = new Uint8Array(state.analyser.frequencyBinCount);
-        timeData = new Uint8Array(state.analyser.frequencyBinCount);
         state.analyser.getByteFrequencyData(freqData);
         state.analyser.getByteTimeDomainData(timeData);
       } else if (pulse && pulse.isPlaying && pulse.bands) {
         // Automatically sync with background radio stream!
         const len = 64;
-        freqData = new Uint8Array(len);
-        timeData = new Uint8Array(len);
         for (let i = 0; i < len; i++) {
           const bandIdx = Math.min(15, Math.floor((i / len) * 16));
           freqData[i] = Math.min(255, Math.floor((pulse.bands[bandIdx] || 0) * 255));
@@ -289,7 +300,7 @@ export default {
       }
 
       // Color scheme
-      let col = cssVar('--accent') || '#942929';
+      let col = cachedAccentCol;
       if (state.colorMode === 'green') col = '#22C55E';
       if (state.colorMode === 'amber') col = '#F59E0B';
       if (state.colorMode === 'mono') col = '#E5E7EB';
@@ -415,6 +426,7 @@ export default {
 
     return () => {
       style.remove();
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(state.animId);
       stopMic();
       if (state.audioElement) {
