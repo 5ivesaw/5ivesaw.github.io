@@ -174,29 +174,37 @@ export default {
       };
     }
 
-    function renderGrid() {
+    let canvasW = 0, canvasH = 0;
+    function handleResize() {
       const { w, h } = fitCanvas(canvas);
+      canvasW = w;
+      canvasH = h;
+    }
+    window.addEventListener('resize', handleResize, { passive: true });
+    handleResize();
+
+    function renderGrid() {
+      const w = canvasW || 600;
+      const h = canvasH || 400;
       ctx.clearRect(0, 0, w, h);
 
       const pal = palette();
       const cw = w / COLS;
       const ch = h / ROWS;
 
-      // Draw grid lines
+      // Draw grid lines (batched in single draw call)
       ctx.strokeStyle = pal.line;
       ctx.lineWidth = 0.5;
+      ctx.beginPath();
       for (let c = 0; c <= COLS; c++) {
-        ctx.beginPath();
         ctx.moveTo(c * cw, 0);
         ctx.lineTo(c * cw, h);
-        ctx.stroke();
       }
       for (let r = 0; r <= ROWS; r++) {
-        ctx.beginPath();
         ctx.moveTo(0, r * ch);
         ctx.lineTo(w, r * ch);
-        ctx.stroke();
       }
+      ctx.stroke();
 
       // Draw cells (mud and walls)
       for (let r = 0; r < ROWS; r++) {
@@ -344,9 +352,17 @@ export default {
           return;
         }
 
-        // Pop best node from open heap
-        openHeap.sort((a, b) => fScore[a.r][a.c] - fScore[b.r][b.c]);
-        const cur = openHeap.shift();
+        // Pop best node from open list with fast O(N) pass instead of full O(N log N) sort
+        let bestIdx = 0;
+        let bestScore = fScore[openHeap[0].r][openHeap[0].c];
+        for (let i = 1; i < openHeap.length; i++) {
+          const score = fScore[openHeap[i].r][openHeap[i].c];
+          if (score < bestScore) {
+            bestScore = score;
+            bestIdx = i;
+          }
+        }
+        const cur = openHeap.splice(bestIdx, 1)[0];
 
         if (cur.r === goal.r && cur.c === goal.c) {
           // Reconstruct path
@@ -601,13 +617,11 @@ export default {
     });
 
     const unTheme = onThemeChange(renderGrid);
-    window.addEventListener('resize', renderGrid);
-    renderGrid();
 
     return () => {
       style.remove();
       unTheme();
-      window.removeEventListener('resize', renderGrid);
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animRaf);
     };
   }

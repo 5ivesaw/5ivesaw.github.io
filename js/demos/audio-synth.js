@@ -302,34 +302,46 @@ export default {
     }
 
     // Touch and mouse events on screen
+    let cachedRect = null;
+    function updateRect() {
+      cachedRect = canvas.getBoundingClientRect();
+    }
+    window.addEventListener('resize', updateRect, { passive: true });
+    updateRect();
+
     function getCoords(e) {
-      const rect = canvas.getBoundingClientRect();
+      if (!cachedRect || cachedRect.width === 0) updateRect();
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const xRatio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      const yRatio = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+      const xRatio = Math.max(0, Math.min(1, (clientX - cachedRect.left) / (cachedRect.width || 1)));
+      const yRatio = Math.max(0, Math.min(1, (clientY - cachedRect.top) / (cachedRect.height || 1)));
       return { xRatio, yRatio };
     }
 
     let isPointerDown = false;
-    canvas.addEventListener('pointerdown', e => {
+    const onPointerDown = e => {
       isPointerDown = true;
+      updateRect();
       const { xRatio, yRatio } = getCoords(e);
       updateTouch(xRatio, yRatio);
-    });
+    };
 
-    window.addEventListener('pointermove', e => {
+    const onPointerMove = e => {
       if (!isPointerDown) return;
       const { xRatio, yRatio } = getCoords(e);
       updateTouch(xRatio, yRatio);
-    });
+    };
 
-    window.addEventListener('pointerup', () => {
+    const onPointerUp = () => {
       if (isPointerDown) {
         isPointerDown = false;
         stopSynthVoice();
       }
-    });
+    };
+
+    canvas.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerup', onPointerUp, { passive: true });
 
     // Mic setup
     async function startMic() {
@@ -510,13 +522,15 @@ export default {
         const cx = w / 2;
         const cy = h / 2;
         const radius = Math.min(w, h) * 0.38;
+        const rotAngle = phase * 0.5;
+        const cosRot = Math.cos(rotAngle);
+        const sinRot = Math.sin(rotAngle);
 
         for (let i = 0; i < 512; i++) {
           const v1 = (timeData[i] - 128) / 128;
           const v2 = (timeData[(i + 128) % 1024] - 128) / 128;
-          const rotAngle = phase * 0.5;
-          const x = cx + (v1 * Math.cos(rotAngle) - v2 * Math.sin(rotAngle)) * radius;
-          const y = cy + (v1 * Math.sin(rotAngle) + v2 * Math.cos(rotAngle)) * radius;
+          const x = cx + (v1 * cosRot - v2 * sinRot) * radius;
+          const y = cy + (v1 * sinRot + v2 * cosRot) * radius;
           if (i === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
@@ -583,6 +597,10 @@ export default {
         state.audioCtx.close().catch(() => {});
       }
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointerdown', onPointerDown);
       const s = document.getElementById('demo-synth-style');
       if (s) s.remove();
     };

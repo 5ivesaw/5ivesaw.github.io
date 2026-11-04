@@ -260,11 +260,10 @@ export default {
     }
 
     function handlePointer(e) {
-      const rect = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      const curX = ((clientX - rect.left) / rect.width) * N;
-      const curY = ((clientY - rect.top) / rect.height) * N;
+      const cw = canvas.clientWidth || 400;
+      const ch = canvas.clientHeight || 400;
+      const curX = ((e.offsetX !== undefined ? e.offsetX : (e.touches ? e.touches[0].clientX : e.clientX)) / cw) * N;
+      const curY = ((e.offsetY !== undefined ? e.offsetY : (e.touches ? e.touches[0].clientY : e.clientY)) / ch) * N;
 
       if (state.isPointerDown) {
         const dx = curX - state.lastX;
@@ -277,18 +276,16 @@ export default {
       state.lastY = curY;
     }
 
+    const onPointerMove = e => { if (state.isPointerDown) handlePointer(e); };
+    const onPointerUp = () => { state.isPointerDown = false; };
+
     canvas.addEventListener('pointerdown', e => {
       state.isPointerDown = true;
       handlePointer(e);
-    });
+    }, { passive: true });
 
-    window.addEventListener('pointermove', e => {
-      if (state.isPointerDown) handlePointer(e);
-    });
-
-    window.addEventListener('pointerup', () => {
-      state.isPointerDown = false;
-    });
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerup', onPointerUp, { passive: true });
 
     // Burst button
     $('#flBurstBtn', root)?.addEventListener('click', () => {
@@ -399,6 +396,8 @@ export default {
     return () => {
       if (state.animId) cancelAnimationFrame(state.animId);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
       const s = document.getElementById('demo-fluid-style');
       if (s) s.remove();
     };

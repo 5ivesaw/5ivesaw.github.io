@@ -364,13 +364,18 @@ export default {
         pulseText.style.color = 'var(--faint)';
       }
 
-      // Physics integration for particles
+      // Physics integration for particles (Zero GC object allocation)
       const moveScale = 0.0016 * effAmp;
       const jitter = 0.0008 * (1 + kick * 1.5);
+      const halfSize = size * 0.5;
+
+      const piM = Math.PI * effM;
+      const piN = Math.PI * effN;
+      const a = state.a;
+      const b = state.b;
 
       ctx.fillStyle = theme.stroke;
-      ctx.shadowColor = theme.glow;
-      ctx.shadowBlur = kick > 0.5 ? 8 : 2;
+      const basePSize = 1.2 * (1 + kick * 0.35);
 
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const idx = i * 4;
@@ -379,20 +384,23 @@ export default {
         let vx = particles[idx + 2];
         let vy = particles[idx + 3];
 
-        const { gx, gy, val } = chladniGradient(x, y, effM, effN, state.a, state.b);
+        // Inline gradient calculation to avoid 4,500 object allocations per frame
+        const w0 = a * Math.sin(piN * x) * Math.sin(piM * y) + b * Math.sin(piM * x) * Math.sin(piN * y);
+        const wx = a * Math.sin(piN * (x + 0.005)) * Math.sin(piM * y) + b * Math.sin(piM * (x + 0.005)) * Math.sin(piN * y);
+        const wy = a * Math.sin(piN * x) * Math.sin(piM * (y + 0.005)) + b * Math.sin(piM * x) * Math.sin(piN * (y + 0.005));
 
-        // Particle moves down the gradient of vibration energy toward nodal curves (where val == 0)
+        const gx = (wx * wx - w0 * w0) * 200; // / 0.005 == * 200
+        const gy = (wy * wy - w0 * w0) * 200;
+
+        // Particle moves down vibration gradient toward nodal lines
         vx = vx * 0.88 - gx * moveScale + (Math.random() - 0.5) * jitter;
         vy = vy * 0.88 - gy * moveScale + (Math.random() - 0.5) * jitter;
 
         x += vx;
         y += vy;
 
-        // Bounce off plate boundaries [-0.95, 0.95]
-        if (x < -0.95) { x = -0.95; vx = -vx * 0.5; }
-        if (x > 0.95) { x = 0.95; vx = -vx * 0.5; }
-        if (y < -0.95) { y = -0.95; vy = -vy * 0.5; }
-        if (y > 0.95) { y = 0.95; vy = -vy * 0.5; }
+        if (x < -0.95) { x = -0.95; vx = -vx * 0.5; } else if (x > 0.95) { x = 0.95; vx = -vx * 0.5; }
+        if (y < -0.95) { y = -0.95; vy = -vy * 0.5; } else if (y > 0.95) { y = 0.95; vy = -vy * 0.5; }
 
         particles[idx] = x;
         particles[idx + 1] = y;
@@ -400,15 +408,11 @@ export default {
         particles[idx + 3] = vy;
 
         // Screen coordinate mapping
-        const sx = ox + (x + 1) * 0.5 * size;
-        const sy = oy + (y + 1) * 0.5 * size;
+        const sx = ox + (x + 1) * halfSize;
+        const sy = oy + (y + 1) * halfSize;
 
-        // Particle dot
-        const pSize = (val < 0.2 ? 1.6 : 1.0) * (1 + kick * 0.4);
-        ctx.fillRect(sx, sy, pSize, pSize);
+        ctx.fillRect(sx, sy, basePSize, basePSize);
       }
-
-      ctx.shadowBlur = 0;
       state.animId = requestAnimationFrame(render);
     }
 

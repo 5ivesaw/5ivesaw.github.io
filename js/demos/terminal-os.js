@@ -73,6 +73,9 @@ export default {
       line.style.whiteSpace = 'pre-wrap';
       line.textContent = text;
       output.appendChild(line);
+      while (output.childNodes.length > 250) {
+        output.removeChild(output.firstChild);
+      }
       screen.scrollTop = screen.scrollHeight;
     }
 

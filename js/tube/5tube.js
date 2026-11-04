@@ -713,22 +713,32 @@ export default {
     });
 
     // Mouse Tracking over Stage
+    let theaterBoxRect = null;
+    function updateTheaterBoxRect() {
+      if (theaterBox) theaterBoxRect = theaterBox.getBoundingClientRect();
+    }
+    window.addEventListener('resize', updateTheaterBoxRect, { passive: true });
+    window.addEventListener('scroll', updateTheaterBoxRect, { passive: true });
+    theaterBox?.addEventListener('pointerenter', updateTheaterBoxRect, { passive: true });
+
     theaterBox?.addEventListener('mousemove', e => {
-      const rect = theaterBox.getBoundingClientRect();
-      const normX = (e.clientX - rect.left) / rect.width;
-      const normY = (e.clientY - rect.top) / rect.height;
+      if (!theaterBoxRect || theaterBoxRect.width === 0) updateTheaterBoxRect();
+      if (!theaterBoxRect) return;
+      const normX = (e.clientX - theaterBoxRect.left) / theaterBoxRect.width;
+      const normY = (e.clientY - theaterBoxRect.top) / theaterBoxRect.height;
 
       const now = Date.now();
       if (now - lastCursorBroadcast > 32) { // ~30Hz
         party.sendCursor(normX, normY);
         lastCursorBroadcast = now;
       }
-    });
+    }, { passive: true });
 
     theaterBox?.addEventListener('click', e => {
-      const rect = theaterBox.getBoundingClientRect();
-      const normX = (e.clientX - rect.left) / rect.width;
-      const normY = (e.clientY - rect.top) / rect.height;
+      if (!theaterBoxRect || theaterBoxRect.width === 0) updateTheaterBoxRect();
+      if (!theaterBoxRect) return;
+      const normX = (e.clientX - theaterBoxRect.left) / theaterBoxRect.width;
+      const normY = (e.clientY - theaterBoxRect.top) / theaterBoxRect.height;
 
       party.sendClick(normX, normY);
       clickRipples.push({
@@ -846,6 +856,8 @@ export default {
     return () => {
       if (animFrame) cancelAnimationFrame(animFrame);
       window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', updateTheaterBoxRect);
+      window.removeEventListener('scroll', updateTheaterBoxRect);
       window.removeEventListener('keydown', onKeyDown);
       document.body.classList.remove('theater-mode');
       const topbar = $('#topbar');

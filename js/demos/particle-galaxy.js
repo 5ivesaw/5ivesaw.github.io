@@ -159,9 +159,8 @@ export default {
 
     // Click to add black holes
     canvas.addEventListener('click', e => {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const x = e.offsetX;
+      const y = e.offsetY;
 
       if (e.shiftKey) {
         if (state.blackHoles.length > 1) {
@@ -262,15 +261,18 @@ export default {
         ctx.restore();
       }
 
-      // Update Particles
-      ctx.save();
+      // Update Particles (Physics integration)
+      const bhCount = state.blackHoles.length;
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         let ax = 0;
         let ay = 0;
+        const curPx = px[i];
+        const curPy = py[i];
 
-        for (const bh of state.blackHoles) {
-          const dx = bh.x - px[i];
-          const dy = bh.y - py[i];
+        for (let b = 0; b < bhCount; b++) {
+          const bh = state.blackHoles[b];
+          const dx = bh.x - curPx;
+          const dy = bh.y - curPy;
           const distSq = dx * dx + dy * dy + 400; // softening factor
           const dist = Math.sqrt(distSq);
           const force = (state.gravity * bh.mass) / distSq;
@@ -282,12 +284,17 @@ export default {
         vy[i] = (vy[i] + ay * 0.016) * state.damping * warpBoost;
         px[i] += vx[i];
         py[i] += vy[i];
-
-        // Draw particle
-        ctx.fillStyle = palette[colorIdx[i]];
-        ctx.fillRect(px[i], py[i], 1.4, 1.4);
       }
-      ctx.restore();
+
+      // Draw particles grouped by color to eliminate 3,600 context fillStyle switches
+      for (let c = 0; c < 5; c++) {
+        ctx.fillStyle = palette[c];
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          if (colorIdx[i] === c) {
+            ctx.fillRect(px[i], py[i], 1.4, 1.4);
+          }
+        }
+      }
 
       state.animId = requestAnimationFrame(loop);
     }

@@ -250,18 +250,33 @@ export default {
       sampleCtx.fillText('5', cx, cy + 5 * scale);
     }
 
-    function renderLoop() {
+    let canvasW = 0, canvasH = 0;
+    function handleResize() {
       const { w, h } = fitCanvas(canvas);
+      canvasW = w;
+      canvasH = h;
+    }
+    window.addEventListener('resize', handleResize, { passive: true });
+    handleResize();
+
+    let cachedAccentCol = cssVar('--accent') || '#942929';
+    onThemeChange(() => { cachedAccentCol = cssVar('--accent') || '#942929'; });
+
+    function renderLoop() {
+      const w = canvasW || 600;
+      const h = canvasH || 400;
       ctx.fillStyle = '#070506';
       ctx.fillRect(0, 0, w, h);
 
       state.phase += 0.03;
       const numCols = state.cols;
       const aspect = h / w;
-      const numRows = Math.floor(numCols * aspect * 0.55);
+      const numRows = Math.max(1, Math.floor(numCols * aspect * 0.55));
 
-      sampleCanvas.width = numCols;
-      sampleCanvas.height = numRows;
+      if (sampleCanvas.width !== numCols || sampleCanvas.height !== numRows) {
+        sampleCanvas.width = numCols;
+        sampleCanvas.height = numRows;
+      }
 
       if (state.sourceType === 'demo') {
         drawProceduralFrame(state.phase);
@@ -276,47 +291,42 @@ export default {
       const cellW = w / numCols;
       const cellH = h / numRows;
 
-      let textFrameLines = [];
-
       ctx.font = `${Math.max(8, Math.floor(cellH * 1.1))}px "JetBrains Mono", monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       let defaultCol = '#22C55E';
-      if (state.colorMode === 'accent') defaultCol = cssVar('--accent') || '#942929';
+      if (state.colorMode === 'accent') defaultCol = cachedAccentCol;
       if (state.colorMode === 'mono') defaultCol = '#E5E7EB';
 
+      const rampLenMinus1 = ramp.length - 1;
+      const invContrast = 1 / state.contrast;
+      const isColor = state.colorMode === 'color';
+
       for (let r = 0; r < numRows; r++) {
-        let lineChars = '';
+        const rowOffset = r * numCols;
+        const cy = (r + 0.5) * cellH;
         for (let c = 0; c < numCols; c++) {
-          const idx = (r * numCols + c) * 4;
-          let red = data[idx];
-          let green = data[idx + 1];
-          let blue = data[idx + 2];
+          const idx = (rowOffset + c) * 4;
+          const red = data[idx];
+          const green = data[idx + 1];
+          const blue = data[idx + 2];
 
           let lum = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
-          lum = Math.pow(lum, 1 / state.contrast);
-
+          if (invContrast !== 1) lum = Math.pow(lum, invContrast);
           if (state.invert) lum = 1 - lum;
-          lum = Math.max(0, Math.min(1, lum));
+          if (lum < 0) lum = 0; else if (lum > 1) lum = 1;
 
-          const charIdx = Math.floor(lum * (ramp.length - 1));
+          const charIdx = Math.floor(lum * rampLenMinus1);
           const char = ramp[charIdx] || ' ';
-          lineChars += char;
 
           if (char !== ' ') {
-            if (state.colorMode === 'color') {
-              ctx.fillStyle = `rgb(${red},${green},${blue})`;
-            } else {
-              ctx.fillStyle = defaultCol;
-            }
-            ctx.fillText(char, (c + 0.5) * cellW, (r + 0.5) * cellH);
+            ctx.fillStyle = isColor ? `rgb(${red},${green},${blue})` : defaultCol;
+            ctx.fillText(char, (c + 0.5) * cellW, cy);
           }
         }
-        textFrameLines.push(lineChars);
       }
 
-      latestAsciiFrame = textFrameLines.join('\n');
       state.animId = requestAnimationFrame(renderLoop);
     }
 
@@ -394,8 +404,31 @@ export default {
     });
 
     $('#baCopyTextBtn', root).addEventListener('click', async () => {
-      if (!latestAsciiFrame) return;
-      await copyText(latestAsciiFrame);
+      // Generate text frame on-demand
+      const numCols = state.cols;
+      const numRows = sampleCanvas.height;
+      const imgData = sampleCtx.getImageData(0, 0, numCols, numRows);
+      const data = imgData.data;
+      const ramp = RAMPS[state.charSet] || RAMPS.fivesaw;
+      const rampLenMinus1 = ramp.length - 1;
+      const invContrast = 1 / state.contrast;
+      let text = '';
+
+      for (let r = 0; r < numRows; r++) {
+        let line = '';
+        const rowOffset = r * numCols;
+        for (let c = 0; c < numCols; c++) {
+          const idx = (rowOffset + c) * 4;
+          let lum = (0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2]) / 255;
+          if (invContrast !== 1) lum = Math.pow(lum, invContrast);
+          if (state.invert) lum = 1 - lum;
+          if (lum < 0) lum = 0; else if (lum > 1) lum = 1;
+          line += ramp[Math.floor(lum * rampLenMinus1)] || ' ';
+        }
+        text += line + '\n';
+      }
+
+      await copyText(text);
       toast('Copied ASCII frame to clipboard!', 'ok');
       sfx('copy');
     });
@@ -413,6 +446,7 @@ export default {
 
     return () => {
       style.remove();
+      window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(state.animId);
       stopWebcam();
       if (state.videoElement) {

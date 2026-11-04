@@ -212,13 +212,14 @@ export default {
     });
 
     // Orbit Drag
-    canvas.addEventListener('pointerdown', e => {
+    const onPointerDown = e => {
       state.isDragging = true;
       state.lastMouseX = e.clientX;
       state.lastMouseY = e.clientY;
-    });
+    };
+    canvas.addEventListener('pointerdown', onPointerDown);
 
-    window.addEventListener('pointermove', e => {
+    const onPointerMove = e => {
       if (!state.isDragging) return;
       const dx = e.clientX - state.lastMouseX;
       const dy = e.clientY - state.lastMouseY;
@@ -226,11 +227,13 @@ export default {
       state.cameraAngleX = Math.max(0.1, Math.min(1.2, state.cameraAngleX + dy * 0.008));
       state.lastMouseX = e.clientX;
       state.lastMouseY = e.clientY;
-    });
+    };
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
 
-    window.addEventListener('pointerup', () => {
+    const onPointerUp = () => {
       state.isDragging = false;
-    });
+    };
+    window.addEventListener('pointerup', onPointerUp, { passive: true });
 
     // Raycast click
     canvas.addEventListener('click', e => {
@@ -256,6 +259,14 @@ export default {
         }
       }
     });
+
+    // Pre-allocated voxel pool & index array to eliminate per-frame GC churn
+    const maxVoxels = VX_SIZE * VX_HEIGHT * VX_SIZE;
+    const voxelPool = new Array(maxVoxels);
+    for (let i = 0; i < maxVoxels; i++) {
+      voxelPool[i] = { x: 0, y: 0, depth: 0, bId: 0 };
+    }
+    const voxelIndices = new Int32Array(maxVoxels);
 
     // Isometric 3D Voxel Projection
     function render() {
@@ -295,8 +306,8 @@ export default {
       const originX = w / 2;
       const originY = h * 0.65 + (pulse ? Math.sin(pulse.phase * 2) * (2 + kick * 5) : 0);
 
-      // Draw voxel cubes back-to-front
-      const voxelList = [];
+      // Populate pre-allocated pool (0 object allocations per frame)
+      let count = 0;
       for (let x = 0; x < VX_SIZE; x++) {
         for (let y = 0; y < VX_HEIGHT; y++) {
           for (let z = 0; z < VX_SIZE; z++) {
@@ -312,29 +323,35 @@ export default {
             const yRot = ry * cosX - zRot * sinX;
             const depth = ry * sinX + zRot * cosX;
 
-            voxelList.push({
-              x: originX + xRot,
-              y: originY - yRot,
-              depth,
-              bId
-            });
+            const v = voxelPool[count];
+            v.x = originX + xRot;
+            v.y = originY - yRot;
+            v.depth = depth;
+            v.bId = bId;
+            voxelIndices[count] = count;
+            count++;
           }
         }
       }
 
-      voxelList.sort((a, b) => a.depth - b.depth);
+      const activeIndices = voxelIndices.subarray(0, count);
+      activeIndices.sort((a, b) => voxelPool[a].depth - voxelPool[b].depth);
 
-      for (const v of voxelList) {
+      const s = blockSize;
+      const s086 = s * 0.86;
+      const s05 = s * 0.5;
+
+      for (let i = 0; i < count; i++) {
+        const v = voxelPool[activeIndices[i]];
         const meta = BLOCKS[v.bId] || BLOCKS[1];
-        const s = blockSize;
 
         // Cube top face
         ctx.fillStyle = meta.top;
         ctx.beginPath();
         ctx.moveTo(v.x, v.y - s);
-        ctx.lineTo(v.x + s * 0.86, v.y - s * 0.5);
+        ctx.lineTo(v.x + s086, v.y - s05);
         ctx.lineTo(v.x, v.y);
-        ctx.lineTo(v.x - s * 0.86, v.y - s * 0.5);
+        ctx.lineTo(v.x - s086, v.y - s05);
         ctx.closePath();
         ctx.fill();
         ctx.strokeStyle = 'rgba(0,0,0,0.15)';
@@ -343,10 +360,10 @@ export default {
         // Left face
         ctx.fillStyle = meta.side;
         ctx.beginPath();
-        ctx.moveTo(v.x - s * 0.86, v.y - s * 0.5);
+        ctx.moveTo(v.x - s086, v.y - s05);
         ctx.lineTo(v.x, v.y);
         ctx.lineTo(v.x, v.y + s);
-        ctx.lineTo(v.x - s * 0.86, v.y + s * 0.5);
+        ctx.lineTo(v.x - s086, v.y + s05);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
@@ -355,8 +372,8 @@ export default {
         ctx.fillStyle = meta.bottom;
         ctx.beginPath();
         ctx.moveTo(v.x, v.y);
-        ctx.lineTo(v.x + s * 0.86, v.y - s * 0.5);
-        ctx.lineTo(v.x + s * 0.86, v.y + s * 0.5);
+        ctx.lineTo(v.x + s086, v.y - s05);
+        ctx.lineTo(v.x + s086, v.y + s05);
         ctx.lineTo(v.x, v.y + s);
         ctx.closePath();
         ctx.fill();
@@ -371,6 +388,9 @@ export default {
     return () => {
       if (state.animId) cancelAnimationFrame(state.animId);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointerdown', onPointerDown);
       const s = document.getElementById('demo-voxel-style');
       if (s) s.remove();
     };

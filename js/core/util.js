@@ -139,17 +139,26 @@ export function visibleLoop(el, frame) {
   return () => { stopped = true; cancelAnimationFrame(raf); io.disconnect(); document.removeEventListener('visibilitychange', vis); };
 }
 
-/** Size a canvas to its CSS box at devicePixelRatio (capped). Returns {w,h,dpr} in CSS px. */
+/** Size a canvas to its CSS box at devicePixelRatio (capped). Returns {w,h,dpr,ctx} in CSS px.
+ * Optimized with dimension caching to prevent GPU buffer reallocation & layout thrashing. */
 export function fitCanvas(canvas, maxDpr = 2) {
+  if (!canvas) return { w: 1, h: 1, dpr: 1, ctx: null };
   const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
-  const r = canvas.getBoundingClientRect();
-  const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
-  if (canvas.width !== w * dpr || canvas.height !== h * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; }
-  const ctx = canvas.getContext('2d');
-  if (ctx && typeof ctx.setTransform === 'function') {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = Math.max(1, Math.round(canvas.clientWidth || 300));
+  const h = Math.max(1, Math.round(canvas.clientHeight || 150));
+
+  if (canvas._fitW !== w || canvas._fitH !== h || canvas._fitDpr !== dpr) {
+    canvas._fitW = w;
+    canvas._fitH = h;
+    canvas._fitDpr = dpr;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext('2d');
+    if (ctx && typeof ctx.setTransform === 'function') {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
   }
-  return { w, h, dpr, ctx };
+  return { w, h, dpr, ctx: canvas.getContext('2d') };
 }
 
 export const store = {
