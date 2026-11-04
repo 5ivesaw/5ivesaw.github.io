@@ -351,22 +351,55 @@
       </div>
 
       <div class="stack" style="gap:6px;margin:14px 0;">
-        <a href="#/" class="mobile-drawer-link" data-mview="home">🏠 Home Overview</a>
-        <a href="#/demos" class="mobile-drawer-link" data-mview="demos">⚡ Interactive Demos (15+)</a>
-        <a href="#/tools" class="mobile-drawer-link" data-mview="tools">🛠️ In-Browser Workshop Tools</a>
-        <a href="#/repos" class="mobile-drawer-link" data-mview="repos">📦 Repositories Directory (47+)</a>
-        <a href="#/5tube" class="mobile-drawer-link" data-mview="tube" style="color:#FF3B14;font-weight:700;">▶ 5Tube Synchronized Theater</a>
+        <a href="#/" class="mobile-drawer-link" data-mview="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>
+          <span>Home Overview</span>
+        </a>
+        <a href="#/demos" class="mobile-drawer-link" data-mview="demos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Interactive Demos (15+)</span>
+        </a>
+        <a href="#/tools" class="mobile-drawer-link" data-mview="tools">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 13l-8 8-3-3 1.4-1.4M14.7 6.3 9.3 11.7M14.7 6.3 13 4.5a4 4 0 0 0-5.6 5.6l1.9 1.6M3 21l6-6"/></svg>
+          <span>In-Browser Creative Tools</span>
+        </a>
+        <a href="#/repos" class="mobile-drawer-link" data-mview="repos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>Repositories Directory (47+)</span>
+        </a>
+        <a href="#/5tube" class="mobile-drawer-link" data-mview="tube" style="color:#FF3B14;font-weight:700;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
+          <span>5Tube Synchronized Theater</span>
+        </a>
       </div>
 
       <div class="pb-3 border-b border-[var(--line)]">
         <span class="eyebrow" style="font-size:10px;margin-bottom:8px;display:block;">SWITCH THEME PALETTE</span>
         <div class="grid grid-2" style="gap:6px;" id="mobileThemeGrid">
-          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="latte">☕ Velvet Latte</button>
-          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cream">🥛 Warm Cream</button>
-          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="readme">🔴 README Red</button>
-          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="chainsaw">🪚 Chainsaw</button>
-          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="ostania">🌲 Ostania</button>
-          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cyber">🌌 Cyber</button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="latte">
+            <span class="dot-swatch" style="background:#B2A999;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Velvet Latte</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cream">
+            <span class="dot-swatch" style="background:#D7D0C3;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Warm Cream</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="readme">
+            <span class="dot-swatch" style="background:#A62929;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>README Red</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="chainsaw">
+            <span class="dot-swatch" style="background:linear-gradient(135deg, #FF3B14, #FFC700);width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Chainsaw</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="ostania">
+            <span class="dot-swatch" style="background:#245C49;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Ostania</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cyber">
+            <span class="dot-swatch" style="background:#38BDF8;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Cyber Cobalt</span>
+          </button>
         </div>
       </div>
 
@@ -937,23 +970,23 @@
   <!-- Dedicated Mobile App Bottom Navigation Bar (< 640px) -->
   <nav id="mobileBottomNav" aria-label="Mobile Navigation">
     <a href="#/" class="mob-tab-btn active" data-tab="home">
-      <span class="mob-tab-icon">🏠</span>
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>
       <span class="mob-tab-label">Home</span>
     </a>
     <a href="#/demos" class="mob-tab-btn" data-tab="demos">
-      <span class="mob-tab-icon">⚡</span>
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       <span class="mob-tab-label">Demos</span>
     </a>
     <a href="#/tools" class="mob-tab-btn" data-tab="tools">
-      <span class="mob-tab-icon">🛠️</span>
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 13l-8 8-3-3 1.4-1.4M14.7 6.3 9.3 11.7M14.7 6.3 13 4.5a4 4 0 0 0-5.6 5.6l1.9 1.6M3 21l6-6"/></svg>
       <span class="mob-tab-label">Tools</span>
     </a>
     <a href="#/repos" class="mob-tab-btn" data-tab="repos">
-      <span class="mob-tab-icon">📦</span>
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
       <span class="mob-tab-label">Repos</span>
     </a>
     <a href="#/5tube" class="mob-tab-btn" data-tab="tube">
-      <span class="mob-tab-icon">📺</span>
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
       <span class="mob-tab-label">5Tube</span>
     </a>
   </nav>

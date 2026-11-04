@@ -1089,14 +1089,14 @@ pre, code, .code-block, .code-block *,
     bottom: 0;
     left: 0;
     right: 0;
-    height: 52px;
+    height: 56px;
     background: var(--elevated);
     border-top: 1px solid var(--line);
     z-index: 9999;
     justify-content: space-around;
     align-items: center;
     padding-bottom: env(safe-area-inset-bottom, 0);
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.25);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
   }
 
   .mob-tab-btn {
@@ -1104,11 +1104,11 @@ pre, code, .code-block, .code-block *,
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
     flex: 1;
     height: 100%;
     text-decoration: none;
-    color: var(--muted);
+    color: var(--faint);
     transition: color 0.15s ease, transform 0.15s ease;
   }
   .mob-tab-btn.active {
@@ -1119,28 +1119,30 @@ pre, code, .code-block, .code-block *,
     transform: scale(0.92);
   }
   .mob-tab-icon {
-    font-size: 16px;
-    line-height: 1;
+    width: 20px;
+    height: 20px;
+    display: block;
   }
   .mob-tab-label {
     font-family: var(--font-mono);
     font-size: 10px;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
   }
 
-  /* Dedicated Mobile Mini-Player Music Dock */
+  /* Dedicated Mobile Mini-Player Music Dock (Pixel-Perfect Proportions) */
   #musicDock {
     position: fixed !important;
-    bottom: 58px !important;
-    left: 10px !important;
-    right: 10px !important;
+    bottom: 64px !important;
+    left: 12px !important;
+    right: 12px !important;
     width: auto !important;
-    height: 46px !important;
-    border-radius: 23px !important;
-    padding: 4px 10px !important;
+    height: 52px !important;
+    border-radius: var(--r) !important;
+    padding: 0 12px !important;
     background: var(--elevated) !important;
     border: 1px solid var(--line-strong) !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45) !important;
     z-index: 9998 !important;
     display: flex !important;
     align-items: center !important;
@@ -1154,8 +1156,8 @@ pre, code, .code-block, .code-block *,
   #dockProgressTrack {
     position: absolute;
     top: 0;
-    left: 16px;
-    right: 16px;
+    left: 12px;
+    right: 12px;
     height: 2px;
     background: rgba(255,255,255,0.08);
     border-radius: 1px;
@@ -1166,45 +1168,52 @@ pre, code, .code-block, .code-block *,
     width: 100% !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 8px !important;
+    gap: 10px !important;
   }
 
   .dock-thumb-box {
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 50% !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 6px !important;
     overflow: hidden !important;
-    border: 1.5px solid var(--line) !important;
+    border: 1px solid var(--line) !important;
     flex-shrink: 0 !important;
   }
 
   #dockTitle {
-    font-size: 11px !important;
-    max-width: 130px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--ink) !important;
+    max-width: 140px !important;
+    line-height: 1.2 !important;
   }
   #dockArtist {
-    font-size: 10px !important;
-    max-width: 130px !important;
+    font-size: 10.5px !important;
+    color: var(--faint) !important;
+    max-width: 140px !important;
+    margin-top: 2px !important;
   }
 
   #dockPlayBtn {
-    width: 32px !important;
-    height: 32px !important;
+    width: 34px !important;
+    height: 34px !important;
     border-radius: 50% !important;
+    background: var(--accent) !important;
+    color: var(--on-accent, #fff) !important;
     flex-shrink: 0 !important;
   }
   #dockNextBtn, #dockQueueToggle {
-    width: 28px !important;
-    height: 28px !important;
+    width: 30px !important;
+    height: 30px !important;
     flex-shrink: 0 !important;
   }
 
   #dockQueueDrawer {
     position: fixed !important;
-    bottom: 110px !important;
-    left: 10px !important;
-    right: 10px !important;
-    max-height: 55vh !important;
+    bottom: 124px !important;
+    left: 12px !important;
+    right: 12px !important;
+    max-height: 52vh !important;
     border-radius: var(--r) !important;
     z-index: 9999 !important;
   }
