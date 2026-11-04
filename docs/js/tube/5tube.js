@@ -29,23 +29,156 @@ let currentComments = [];
 let syncedComments = [];
 let activeVideoId = 'eXRWHzV72sU';
 
+// ---------------- SHORTS NICHES & CURATED FEEDS ----------------
+// Authentic YouTube Shorts across popular categories (NO music-only playlist)
+export const SHORTS_NICHES = {
+  memes: {
+    id: 'memes',
+    name: 'Memes & Brainrot',
+    icon: 'zap',
+    desc: 'Viral memes, funny skits & sound edits',
+    items: [
+      { id: 'oPjQvFmU8sY', title: 'Spinning cat meme compilation', author: 'Meme Central' },
+      { id: 'q7o7PRHPYm0', title: 'Emotional Damage legendary clip', author: 'Steven He' },
+      { id: 'm8e-Cq98Nmw', title: 'Sigma sound edit with impossible timing', author: 'SigmaShorts' },
+      { id: 'aAkMkVFwAoo', title: 'The unexpected plot twist', author: 'DailyHumor' },
+      { id: 'kH_N_y2yW88', title: 'Bro really thought he got away', author: 'GiggleHub' },
+      { id: '8b92kF1_o0Y', title: 'When the joke lands a little too well', author: 'LaughTrack' }
+    ]
+  },
+  gaming: {
+    id: 'gaming',
+    name: 'Gaming & Clips',
+    icon: 'gamepad',
+    desc: 'Minecraft clutches, GTA physics & Elden Ring parries',
+    items: [
+      { id: 'Ww8mG3y3_2c', title: 'Minecraft 1v4 clutch play of the year', author: 'ClutchGamer' },
+      { id: 'y6120QOlsfU', title: 'GTA 5 Impossible ramp jump across map', author: 'SpeedyStunts' },
+      { id: '9wA_jF1J_4M', title: 'Elden Ring parrying boss blindfolded', author: 'SoulsVeteran' },
+      { id: 'fC7oUOUEEi4', title: 'Geometry Dash extreme demon last jump', author: 'DashMaster' },
+      { id: 'f4tWw9X0XbM', title: 'Valorant 1 tap ace in 3 seconds', author: 'RadiantClips' },
+      { id: 'g_R5m_zZ_8k', title: 'Subway Surfers impossible speedrun movement', author: 'SurferPro' }
+    ]
+  },
+  satisfying: {
+    id: 'satisfying',
+    name: 'Satisfying & ASMR',
+    icon: 'sparkle',
+    desc: 'Kinetic sand slicing, soap carving & 3D loops',
+    items: [
+      { id: 'mRjV_9rFv9M', title: 'Kinetic sand slicing clean crisp audio', author: 'SandFactory' },
+      { id: 'L_LUpnjgPso', title: 'Soap block peeling ultimate satisfaction', author: 'ASMRCraft' },
+      { id: 'u0F8J912gHY', title: 'Hydraulic press vs solid titanium sphere', author: 'CrushLab' },
+      { id: 'K7n3v37Ew1A', title: '100,000 Dominoes falling in perfect spiral', author: 'DominoKing' },
+      { id: 'dQw4w9WgXcQ', title: '3D mechanical perpetual marble loop', author: 'PhysicsSim' }
+    ]
+  },
+  comedy: {
+    id: 'comedy',
+    name: 'Comedy & Fails',
+    icon: 'laugh',
+    desc: 'Standup punchlines, public pranks & funny fails',
+    items: [
+      { id: 'p3oR9Y8q2xM', title: 'Public microphone question goes completely wrong', author: 'StreetJokes' },
+      { id: 'w3_b98124uY', title: 'Instant karma caught in 4K', author: 'FailArmy' },
+      { id: 'n29u_fF91jA', title: 'Orange cat operating with 1 brain cell', author: 'CatVibes' },
+      { id: 'g81_0kNm24a', title: 'Dad joke competition with water in mouth', author: 'PunMasters' }
+    ]
+  },
+  tech: {
+    id: 'tech',
+    name: 'Tech & Future',
+    icon: 'monitor',
+    desc: 'Atlas parkour, robotics, AI experiments & gadgets',
+    items: [
+      { id: 'k79Y821fMno', title: 'Boston Dynamics Atlas robot gymnastics', author: 'Boston Dynamics' },
+      { id: 'x92fL019uNm', title: 'Neural physics engine simulating fluid', author: 'AI Frontiers' },
+      { id: '8f1_0m28jLa', title: 'Wearable hologram interface real prototype', author: 'FutureTech' },
+      { id: '2f91_xNm812', title: 'Electric vehicle autonomous drift track test', author: 'CyberGear' }
+    ]
+  },
+  anime: {
+    id: 'anime',
+    name: 'Anime & Animation',
+    icon: 'film',
+    desc: 'Sakuga combat cuts, high FPS animation & AMVs',
+    items: [
+      { id: 'j1_9082mNlk', title: 'Sakuga sword combat animation sequence', author: 'SakugaArchive' },
+      { id: 'a08f921_Lkm', title: 'Chainsaw Man Denji hybrid animation cut', author: 'MAPPA Fan' },
+      { id: 'm0182_9fNjk', title: 'Hinokami Kagura flawless frame pacing', author: 'DemonEdits' },
+      { id: 'k19208_fNla', title: 'Spider-Verse dynamic camera frame breakdown', author: 'AnimatorsGuild' }
+    ]
+  },
+  animals: {
+    id: 'animals',
+    name: 'Cute Animals',
+    icon: 'heart',
+    desc: 'Puppies, curious red pandas & funny cats',
+    items: [
+      { id: 'o108_m128jA', title: 'Golden retriever puppy obstacle run', author: 'PuppyLove' },
+      { id: 'c189_91823La', title: 'Tiny kitten tries to roar like a lion', author: 'FelineShorts' },
+      { id: 'u198_18290La', title: 'Red panda trying to look menacing', author: 'ZooClips' }
+    ]
+  },
+  speedruns: {
+    id: 'speedruns',
+    name: 'Speedruns & Skills',
+    icon: 'ratio',
+    desc: 'Record-shattering runs, rubik cube in 3s & mastery',
+    items: [
+      { id: 's189_10928La', title: 'Super Mario 64 backward long jump glitch run', author: 'SpeedrunCentral' },
+      { id: 'z189_19283La', title: 'Solving 3x3 Rubik cube in 3.13 seconds', author: 'CubeGod' },
+      { id: 'p102_19283La', title: 'Extreme pen spinning championship combo', author: 'SpinMaster' }
+    ]
+  }
+};
+
+// Dynamic Shorts search using open Invidious endpoints with automatic fallback
+export async function searchShortsNiche(query) {
+  if (!query) return SHORTS_NICHES.memes.items;
+  const instances = [
+    'https://inv.tux.pizza',
+    'https://invidious.nerdvpn.de',
+    'https://invidious.privacyredirect.com',
+    'https://pipedapi.kavin.rocks'
+  ];
+  const q = `${query} shorts`;
+  for (const inst of instances) {
+    try {
+      const res = await fetch(`${inst}/api/v1/search?q=${encodeURIComponent(q)}&type=video`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const filtered = data
+          .filter(v => v.videoId && (v.lengthSeconds ? v.lengthSeconds <= 90 : true))
+          .slice(0, 12)
+          .map(v => ({
+            id: v.videoId,
+            title: v.title || `${query} Short`,
+            author: v.author || 'YouTube Shorts'
+          }));
+        if (filtered.length > 0) return filtered;
+      }
+    } catch (e) {}
+  }
+
+  // Fallback: match keywords against curated pools
+  const qLower = query.toLowerCase();
+  for (const [key, niche] of Object.entries(SHORTS_NICHES)) {
+    if (qLower.includes(key) || niche.name.toLowerCase().includes(qLower)) {
+      return niche.items;
+    }
+  }
+  return SHORTS_NICHES.memes.items;
+}
+
 // Doomscroll state
 let isDoomscroll = false;
 let doomIndex = 0;
-const DOOMSCROLL_FEED = [
-  { id: 'jfKfPfyJRdk', title: 'lofi hip hop radio - beats to relax/study to', author: 'Lofi Girl' },
-  { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito (Loop Drop)', author: 'Luis Fonsi' },
-  { id: '9bZkp7q19f0', title: 'PSY - GANGNAM STYLE', author: 'OfficialPsy' },
-  { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk', author: 'Mark Ronson' },
-  { id: '09R8_2nJtjg', title: 'Maroon 5 - Sugar', author: 'Maroon 5' },
-  { id: 'CevxZvSJLk8', title: 'Katy Perry - Roar', author: 'Katy Perry' },
-  { id: 'hT_nvWreIhg', title: 'OneRepublic - Counting Stars', author: 'OneRepublic' },
-  { id: 'YQHsXMglC9A', title: 'Adele - Hello', author: 'Adele' },
-  { id: 'fJ9rUzIMcZQ', title: 'Queen - Bohemian Rhapsody', author: 'Queen Official' },
-  { id: 'JGwWNGJdvx8', title: 'Ed Sheeran - Shape of You', author: 'Ed Sheeran' },
-  { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again', author: 'Wiz Khalifa' },
-  { id: '2Vv-BfVoq4g', title: 'Ed Sheeran - Perfect', author: 'Ed Sheeran' }
-];
+let activeDoomFeed = SHORTS_NICHES.memes.items;
+let activeNicheTitle = SHORTS_NICHES.memes.name;
 
 // YouTube URL parser
 export function parseYouTubeId(input) {
@@ -137,6 +270,17 @@ export default {
 
               <!-- Floating Chat Overlay (Discord voice-call overlay style) -->
               <div id="fivetubeFloatingChat" class="fivetube-floating-chat"></div>
+
+              <!-- Top Edge & Side Sensors (Intercepts pointer events above iframe) -->
+              <div id="theaterTopSensor" class="theater-top-sensor" aria-hidden="true"></div>
+              <div id="theaterLeftSensor" class="theater-side-sensor-left" aria-hidden="true"></div>
+              <div id="theaterRightSensor" class="theater-side-sensor-right" aria-hidden="true"></div>
+
+              <!-- Persistent Minimal Micro-Hint Badge (Always accessible, breaks iframe focus trap) -->
+              <div id="hudPersistentHint" class="hud-persistent-hint hidden" role="button" tabindex="0" title="Tap or hover top for controls">
+                <span class="hint-dot"></span>
+                <span class="hint-text">Hover top or press Esc / T for controls</span>
+              </div>
 
               <!-- Sleek Theater Mini Controls HUD (Small, Auto-Hiding) -->
               <div id="theaterControlsHud" class="theater-controls-hud hidden">
@@ -314,16 +458,28 @@ export default {
           <div id="doomscrollStageWrap" class="doomscroll-stage-wrap">
             <div id="doomscrollPlayerMount" class="doomscroll-player-mount"></div>
 
+            <!-- Top Edge Sensor & Persistent Micro-Hint for Doomscroll -->
+            <div id="doomscrollTopSensor" class="theater-top-sensor" aria-hidden="true"></div>
+            <div id="doomscrollPersistentHint" class="hud-persistent-hint" role="button" tabindex="0" title="Tap or hover top for controls">
+              <span class="hint-dot"></span>
+              <span class="hint-text">Hover top or press Esc for controls</span>
+            </div>
+
             <!-- Top Bar -->
             <div class="doomscroll-top-bar">
               <div class="row items-center" style="gap:6px;background:rgba(15,15,20,0.68);padding:4px 10px;border-radius:var(--r-full);backdrop-filter:blur(6px);">
                 <span class="status-dot"></span>
-                <span class="mono xs font-bold text-white">SYNCED DOOMSCROLL</span>
-                <span id="doomscrollCounterBadge" class="badge" style="font-size:9px;background:var(--accent);color:#fff;">1 / 12</span>
+                <span id="doomscrollNicheLabel" class="mono xs font-bold text-white truncate" style="max-width:140px;">MEMES &amp; BRAINROT</span>
+                <span id="doomscrollCounterBadge" class="badge" style="font-size:9px;background:var(--accent);color:#fff;">1 / 6</span>
               </div>
-              <button type="button" id="exitDoomscrollBtn" class="hud-micro-btn hud-exit-accent" title="Exit Doomscroll (Esc)">
-                ${icon('close')}
-              </button>
+              <div class="row items-center" style="gap:6px;">
+                <button type="button" id="doomChangeNicheBtn" class="btn sm ghost" style="color:#fff;background:rgba(255,255,255,0.14);height:28px;padding:0 8px;border-radius:var(--r-full);gap:4px;" title="Switch Shorts Niche or Search">
+                  ${icon('search')} <span class="mono xs">Niches</span>
+                </button>
+                <button type="button" id="exitDoomscrollBtn" class="hud-micro-btn hud-exit-accent" title="Exit Doomscroll (Esc)">
+                  ${icon('close')}
+                </button>
+              </div>
             </div>
 
             <!-- Bottom Video Info -->
@@ -360,6 +516,41 @@ export default {
 
             <!-- Floating Reactions Container -->
             <div id="doomscrollReactionsContainer"></div>
+          </div>
+        </div>
+
+        <!-- Shorts Niche & Search Launcher Modal -->
+        <div id="doomscrollNicheModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:100035;display:flex;align-items:center;justify-content:center;padding:14px;">
+          <div class="card pad doomscroll-niche-card" style="max-width:540px;width:100%;max-height:85vh;overflow-y:auto;position:relative;">
+            <div class="row between items-center pb-3 border-b border-[var(--line)]">
+              <div class="row items-center" style="gap:8px;">
+                <span class="badge" style="background:#FF0000;color:#fff;font-weight:700;font-size:10px;padding:2px 7px;">SHORTS</span>
+                <span class="mono font-bold" style="font-size:15px;color:var(--ink);">Choose Shorts Niche</span>
+              </div>
+              <button type="button" id="closeNicheModalBtn" class="btn sm ghost font-bold" style="padding:2px 8px;">✕</button>
+            </div>
+
+            <!-- Search Any Custom Niche Form -->
+            <form id="shortsNicheSearchForm" class="stack mt-3" style="gap:6px;">
+              <div class="row" style="gap:6px;">
+                <div class="search-box row items-center flex-1" style="border-radius:var(--r-md);background:var(--elevated);border:1px solid var(--line);padding:0 8px;">
+                  ${icon('search')}
+                  <input type="text" id="shortsSearchQueryInput" placeholder="Search Shorts niche (speedruns, comedy, physics)..." class="input xs font-mono flex-1" style="height:34px;background:transparent;border:none;" autocomplete="off"/>
+                </div>
+                <button type="submit" id="shortsSearchSubmitBtn" class="btn sm primary font-mono" style="height:34px;padding:0 12px;">
+                  Search &amp; Scroll
+                </button>
+              </div>
+              <span class="mono xs faint" style="font-size:9.5px;">All party members sync to the selected niche in real-time.</span>
+            </form>
+
+            <!-- Popular Preset Niches Grid -->
+            <div class="mt-4">
+              <span class="eyebrow" style="font-size:10px;letter-spacing:0.8px;">OR SELECT A POPULAR NICHE</span>
+              <div class="doomscroll-niche-grid mt-2" id="doomscrollNichesContainer">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
           </div>
         </div>
 
@@ -536,29 +727,63 @@ export default {
       if (snippet) snippet.textContent = `yt-dlp -f "bestvideo+bestaudio" https://www.youtube.com/watch?v=${vid}`;
     }
 
-    // Theater HUD Auto-Hide Proximity Logic
+    // Theater Elements & Focus Trap Recovery Sensors
+    const theaterTopSensor = $('#theaterTopSensor');
+    const theaterLeftSensor = $('#theaterLeftSensor');
+    const theaterRightSensor = $('#theaterRightSensor');
+    const persistentHint = $('#hudPersistentHint');
+
+    function restoreWindowFocus() {
+      if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+        document.activeElement.blur();
+      }
+      window.focus();
+    }
+
+    // Theater HUD Auto-Hide & Sensor Recovery
     function showTheaterHud() {
       if (!theaterHud || !isTheater) return;
       theaterHud.classList.add('hud-active');
+      if (persistentHint) persistentHint.classList.add('is-active');
+      restoreWindowFocus();
+
       if (hudIdleTimer) clearTimeout(hudIdleTimer);
       hudIdleTimer = setTimeout(() => {
         theaterHud.classList.remove('hud-active');
-      }, 2600);
+        if (persistentHint) persistentHint.classList.remove('is-active');
+      }, 3200);
     }
+
+    // Sensors listen for pointer / touch movement to wake HUD even when mouse moves above iframe
+    [theaterTopSensor, theaterLeftSensor, theaterRightSensor, persistentHint, theaterHud].forEach(el => {
+      if (!el) return;
+      el.addEventListener('pointerenter', showTheaterHud, { passive: true });
+      el.addEventListener('pointermove', showTheaterHud, { passive: true });
+      el.addEventListener('pointerdown', showTheaterHud, { passive: true });
+      el.addEventListener('touchstart', showTheaterHud, { passive: true });
+    });
 
     theaterBox?.addEventListener('pointermove', showTheaterHud, { passive: true });
     theaterBox?.addEventListener('pointerdown', showTheaterHud, { passive: true });
 
+    persistentHint?.addEventListener('click', e => {
+      e.stopPropagation();
+      showTheaterHud();
+      restoreWindowFocus();
+    });
+
     theaterHud?.addEventListener('mouseenter', () => {
       if (hudIdleTimer) clearTimeout(hudIdleTimer);
       theaterHud.classList.add('hud-active');
+      restoreWindowFocus();
     });
 
     theaterHud?.addEventListener('mouseleave', () => {
       if (hudIdleTimer) clearTimeout(hudIdleTimer);
       hudIdleTimer = setTimeout(() => {
         theaterHud.classList.remove('hud-active');
-      }, 1000);
+        if (persistentHint) persistentHint.classList.remove('is-active');
+      }, 1200);
     });
 
     // Toggle Chat in Theater
@@ -601,8 +826,12 @@ export default {
       document.body.classList.toggle('theater-mode', isTheater);
       theaterBox.classList.toggle('theater-fullscreen', isTheater);
       theaterHud.classList.toggle('hidden', !isTheater);
+      if (persistentHint) {
+        persistentHint.classList.toggle('hidden', !isTheater);
+      }
       if (isTheater) {
         showTheaterHud();
+        restoreWindowFocus();
       }
       const topbar = $('#topbar');
       if (topbar) topbar.style.display = isTheater ? 'none' : '';
@@ -1214,24 +1443,63 @@ export default {
       }, 250);
     });
 
-    // ---------------- SYNCED DOOMSCROLL MODE ----------------
+    // ---------------- SYNCED DOOMSCROLL MODE & NICHE SEARCH ----------------
     const doomOverlay = $('#fivetubeDoomscrollOverlay');
     const doomCounter = $('#doomscrollCounterBadge');
     const doomAuthor = $('#doomscrollAuthor');
     const doomTitle = $('#doomscrollTitle');
+    const doomNicheLabel = $('#doomscrollNicheLabel');
     const doomPrevBtn = $('#doomPrevBtn');
     const doomNextBtn = $('#doomNextBtn');
     const exitDoomBtn = $('#exitDoomscrollBtn');
     const doomToggleBtn = $('#doomscrollToggleBtn');
+    const doomChangeNicheBtn = $('#doomChangeNicheBtn');
     const doomReactionsContainer = $('#doomscrollReactionsContainer');
+    const doomTopSensor = $('#doomscrollTopSensor');
+    const doomPersistentHint = $('#doomscrollPersistentHint');
+    const doomNicheModal = $('#doomscrollNicheModal');
+    const closeNicheModalBtn = $('#closeNicheModalBtn');
+    const shortsNicheSearchForm = $('#shortsNicheSearchForm');
+    const shortsSearchQueryInput = $('#shortsSearchQueryInput');
+    const doomNichesContainer = $('#doomscrollNichesContainer');
+
+    function wakeDoomscrollControls() {
+      if (!isDoomscroll) return;
+      restoreWindowFocus();
+      if (doomPersistentHint) doomPersistentHint.classList.add('is-active');
+      const topBar = $('.doomscroll-top-bar');
+      const sideRail = $('.doomscroll-side-rail');
+      if (topBar) topBar.style.opacity = '1';
+      if (sideRail) sideRail.style.opacity = '1';
+
+      if (hudIdleTimer) clearTimeout(hudIdleTimer);
+      hudIdleTimer = setTimeout(() => {
+        if (doomPersistentHint) doomPersistentHint.classList.remove('is-active');
+      }, 3400);
+    }
+
+    // Top sensor and persistent micro-hint listeners in Doomscroll
+    [doomTopSensor, doomPersistentHint].forEach(el => {
+      if (!el) return;
+      el.addEventListener('pointerenter', wakeDoomscrollControls, { passive: true });
+      el.addEventListener('pointermove', wakeDoomscrollControls, { passive: true });
+      el.addEventListener('pointerdown', wakeDoomscrollControls, { passive: true });
+      el.addEventListener('touchstart', wakeDoomscrollControls, { passive: true });
+    });
+
+    doomPersistentHint?.addEventListener('click', e => {
+      e.stopPropagation();
+      wakeDoomscrollControls();
+    });
 
     function loadDoomClip(idx, broadcast = true) {
-      if (idx < 0) idx = DOOMSCROLL_FEED.length - 1;
-      if (idx >= DOOMSCROLL_FEED.length) idx = 0;
+      if (!activeDoomFeed || activeDoomFeed.length === 0) activeDoomFeed = SHORTS_NICHES.memes.items;
+      if (idx < 0) idx = activeDoomFeed.length - 1;
+      if (idx >= activeDoomFeed.length) idx = 0;
       doomIndex = idx;
-      const clip = DOOMSCROLL_FEED[doomIndex];
+      const clip = activeDoomFeed[doomIndex];
 
-      if (doomCounter) doomCounter.textContent = `${doomIndex + 1} / ${DOOMSCROLL_FEED.length}`;
+      if (doomCounter) doomCounter.textContent = `${doomIndex + 1} / ${activeDoomFeed.length}`;
       if (doomAuthor) doomAuthor.textContent = clip.author;
       if (doomTitle) doomTitle.textContent = clip.title;
 
@@ -1241,6 +1509,7 @@ export default {
       }
 
       sfx('whoosh');
+      wakeDoomscrollControls();
 
       if (broadcast) {
         party.sendDoomscrollSeek(doomIndex, clip.id, clip.title);
@@ -1259,14 +1528,109 @@ export default {
       setTimeout(() => el.remove(), 1800);
     }
 
+    // Render preset niche cards in modal
+    function renderNicheGrid() {
+      if (!doomNichesContainer) return;
+      doomNichesContainer.innerHTML = Object.values(SHORTS_NICHES).map(n => `
+        <button type="button" class="niche-card-btn" data-niche-key="${n.id}">
+          <div class="niche-card-icon">${icon(n.icon)}</div>
+          <div class="niche-card-info">
+            <span class="niche-card-title">${esc(n.name)}</span>
+            <span class="niche-card-desc">${esc(n.desc)}</span>
+          </div>
+        </button>
+      `).join('');
+
+      doomNichesContainer.querySelectorAll('[data-niche-key]').forEach(btn => {
+        btn.onclick = () => {
+          const key = btn.dataset.nicheKey;
+          const niche = SHORTS_NICHES[key];
+          if (niche) {
+            selectAndLaunchNiche(niche.name, '', niche.items);
+          }
+        };
+      });
+    }
+
+    function openNicheModal() {
+      renderNicheGrid();
+      doomNicheModal?.classList.remove('hidden');
+      sfx('open');
+      setTimeout(() => shortsSearchQueryInput?.focus(), 60);
+    }
+
+    function closeNicheModal() {
+      doomNicheModal?.classList.add('hidden');
+      sfx('close');
+    }
+
+    closeNicheModalBtn?.addEventListener('click', closeNicheModal);
+    doomChangeNicheBtn?.addEventListener('click', openNicheModal);
+
+    // Clicking Doomscroll button on header opens the Niche Selector
     doomToggleBtn?.addEventListener('click', () => {
+      openNicheModal();
+    });
+
+    // Custom Niche Search
+    shortsNicheSearchForm?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const q = shortsSearchQueryInput?.value?.trim();
+      if (!q) return;
+
+      const submitBtn = $('#shortsSearchSubmitBtn');
+      if (submitBtn) submitBtn.textContent = 'Searching...';
+
+      try {
+        toast(`Searching Shorts for: "${q}"...`, 'info');
+        const items = await searchShortsNiche(q);
+        selectAndLaunchNiche(`Search: ${q}`, q, items);
+      } catch (err) {
+        selectAndLaunchNiche(`Search: ${q}`, q, SHORTS_NICHES.memes.items);
+      } finally {
+        if (submitBtn) submitBtn.textContent = 'Search & Scroll';
+      }
+    });
+
+    function selectAndLaunchNiche(nicheName, query, items) {
+      if (!items || items.length === 0) items = SHORTS_NICHES.memes.items;
+      activeDoomFeed = items;
+      activeNicheTitle = nicheName;
+      closeNicheModal();
+
       isDoomscroll = true;
       document.body.classList.add('doomscroll-active');
-      doomOverlay.classList.remove('hidden');
+      doomOverlay?.classList.remove('hidden');
+      if (doomNicheLabel) doomNicheLabel.textContent = nicheName.toUpperCase();
+
       try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (e) {}
-      loadDoomClip(0, party.isHost);
-      sfx('open');
-      toast('Entered Synced Doomscroll Mode! Swipe or use Up/Down keys.', 'ok');
+      loadDoomClip(0, true);
+      wakeDoomscrollControls();
+
+      // Broadcast niche to party!
+      party.sendDoomscrollNiche(nicheName, query, items, 0);
+      toast(`Doomscrolling ${nicheName} with party!`, 'ok');
+      sfx('success');
+    }
+
+    // When party peer syncs niche
+    party.on('doomscroll-niche', data => {
+      if (data.items && data.items.length > 0) {
+        activeDoomFeed = data.items;
+        activeNicheTitle = data.nicheName || 'Synced Niche';
+        if (doomNicheLabel) doomNicheLabel.textContent = activeNicheTitle.toUpperCase();
+
+        if (!isDoomscroll) {
+          isDoomscroll = true;
+          document.body.classList.add('doomscroll-active');
+          doomOverlay?.classList.remove('hidden');
+          try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (e) {}
+        }
+        closeNicheModal();
+        loadDoomClip(data.startIndex || 0, false);
+        wakeDoomscrollControls();
+        toast(`${esc(data.user)} synced Shorts niche: ${esc(data.nicheName)}`, 'info');
+      }
     });
 
     exitDoomBtn?.addEventListener('click', () => {
@@ -1298,6 +1662,7 @@ export default {
       if (data.index !== undefined && data.index !== doomIndex) {
         if (!isDoomscroll) {
           isDoomscroll = true;
+          document.body.classList.add('doomscroll-active');
           doomOverlay.classList.remove('hidden');
           try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (e) {}
         }

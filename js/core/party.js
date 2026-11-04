@@ -368,6 +368,17 @@ export class PartySession {
         break;
       }
 
+      case 'doomscroll-niche': {
+        this.emit('doomscroll-niche', {
+          nicheName: msg.nicheName,
+          query: msg.query || '',
+          items: msg.items || [],
+          startIndex: msg.startIndex || 0,
+          user: msg.user || 'Friend'
+        });
+        break;
+      }
+
       case 'peer-left': {
         this.peers.delete(msg.peerId);
         this.emit('peer-leave', msg.peerId);
@@ -505,6 +516,20 @@ export class PartySession {
     };
     this.broadcast(msg);
     this.emit('doomscroll-reaction', msg);
+  }
+
+  sendDoomscrollNiche(nicheName, query, items, startIndex = 0) {
+    if (!this.code) return;
+    const msg = {
+      type: 'doomscroll-niche',
+      nicheName,
+      query,
+      items,
+      startIndex,
+      user: this.user.name
+    };
+    this.broadcast(msg);
+    this.emit('doomscroll-niche', msg);
   }
 
   // Host playback controls

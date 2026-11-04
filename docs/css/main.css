@@ -832,7 +832,7 @@ html.reduce-motion .reveal { opacity: 1; transform: none; }
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 100010;
+  z-index: 100020;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -855,6 +855,102 @@ html.reduce-motion .reveal { opacity: 1; transform: none; }
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+/* Top and Edge Hover Sensors for Theater Mode (Stops iframe from swallowing pointer events) */
+.theater-top-sensor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  z-index: 100008;
+  pointer-events: auto;
+  background: transparent;
+}
+
+body.theater-mode .theater-top-sensor {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 68px !important;
+  z-index: 100008 !important;
+}
+
+.theater-side-sensor-left,
+.theater-side-sensor-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  z-index: 100008;
+  pointer-events: auto;
+  background: transparent;
+}
+.theater-side-sensor-left { left: 0; }
+.theater-side-sensor-right { right: 0; }
+
+body.theater-mode .theater-side-sensor-left,
+body.theater-mode .theater-side-sensor-right {
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 20px !important;
+  z-index: 100008 !important;
+}
+
+/* Persistent Micro-Hint Badge (Always accessible, breaks iframe focus trap) */
+.hud-persistent-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100009;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: rgba(12, 14, 18, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.4;
+  transition: opacity 0.25s ease, transform 0.25s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  pointer-events: auto;
+}
+
+body.theater-mode .hud-persistent-hint {
+  position: fixed !important;
+  top: 12px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+.hud-persistent-hint:hover,
+.hud-persistent-hint:focus,
+.hud-persistent-hint.is-active {
+  opacity: 0.95 !important;
+  background: rgba(12, 14, 18, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: #FFFFFF !important;
+  transform: translateX(-50%) scale(1.02) !important;
+}
+
+.hint-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #FF3B14);
+  box-shadow: 0 0 6px var(--accent, #FF3B14);
+  flex-shrink: 0;
 }
 
 .hud-micro-btn {
@@ -1022,7 +1118,7 @@ body.theater-mode .fivetube-theater-box.theater-fullscreen {
 }
 
 body.theater-mode .theater-controls-hud {
-  z-index: 100010 !important;
+  z-index: 100020 !important;
   top: 18px !important;
   right: 18px !important;
 }
@@ -1300,7 +1396,7 @@ body.in-fivetube #musicDock {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  z-index: 25;
+  z-index: 100030;
 }
 
 .doomscroll-rail-btn {
@@ -1338,7 +1434,7 @@ body.in-fivetube #musicDock {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 25;
+  z-index: 100030;
   pointer-events: none;
 }
 
@@ -1386,6 +1482,103 @@ body.in-fivetube #musicDock {
     opacity: 0;
     transform: translateY(-180px) scale(0.9) rotate(-18deg);
   }
+}
+
+/* Doomscroll Top Sensor & Hint */
+#doomscrollTopSensor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  z-index: 100028;
+  pointer-events: auto;
+  background: transparent;
+}
+
+#doomscrollPersistentHint {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100029;
+}
+
+/* Shorts Niche Launcher & Search Modal */
+#doomscrollNicheModal {
+  z-index: 100050 !important;
+}
+
+.doomscroll-niche-card {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--line-strong);
+}
+
+.doomscroll-niche-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .doomscroll-niche-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.niche-card-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s ease;
+  width: 100%;
+}
+.niche-card-btn:hover {
+  background: var(--elevated);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.niche-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 59, 20, 0.1);
+  color: var(--accent);
+  flex-shrink: 0;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.niche-card-btn:hover .niche-card-icon {
+  background: var(--accent);
+  color: #FFFFFF;
+}
+.niche-card-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.niche-card-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.niche-card-title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ink);
+}
+.niche-card-desc {
+  font-size: 10.5px;
+  color: var(--faint);
+  line-height: 1.25;
+  margin-top: 2px;
 }
 
 /* Mobile & Tablet Responsive Adjustments */
@@ -1646,7 +1839,7 @@ pre, code, .code-block, .code-block *,
   }
 
   #dockShuffleBtn, #dockStopBtn, #dockRepeatBtn, #dockVolSlider,
-  #dockMuteBtn, #dockTimeCur, #dockTimeDur, #dockLiveAudioBtn, #dockPrevBtn {
+  #dockMuteBtn, #dockTimeCur, #dockTimeDur, #dockLiveAudioBtn, #dockTabAudioBtn, #dockPrevBtn {
     display: none !important;
   }
 
