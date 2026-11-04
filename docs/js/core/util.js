@@ -139,17 +139,26 @@ export function visibleLoop(el, frame) {
   return () => { stopped = true; cancelAnimationFrame(raf); io.disconnect(); document.removeEventListener('visibilitychange', vis); };
 }
 
-/** Size a canvas to its CSS box at devicePixelRatio (capped). Returns {w,h,dpr} in CSS px. */
+/** Size a canvas to its CSS box at devicePixelRatio (capped). Returns {w,h,dpr,ctx} in CSS px.
+ * Optimized with dimension caching to prevent GPU buffer reallocation & layout thrashing. */
 export function fitCanvas(canvas, maxDpr = 2) {
+  if (!canvas) return { w: 1, h: 1, dpr: 1, ctx: null };
   const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
-  const r = canvas.getBoundingClientRect();
-  const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
-  if (canvas.width !== w * dpr || canvas.height !== h * dpr) { canvas.width = w * dpr; canvas.height = h * dpr; }
-  const ctx = canvas.getContext('2d');
-  if (ctx && typeof ctx.setTransform === 'function') {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = Math.max(1, Math.round(canvas.clientWidth || 300));
+  const h = Math.max(1, Math.round(canvas.clientHeight || 150));
+
+  if (canvas._fitW !== w || canvas._fitH !== h || canvas._fitDpr !== dpr) {
+    canvas._fitW = w;
+    canvas._fitH = h;
+    canvas._fitDpr = dpr;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext('2d');
+    if (ctx && typeof ctx.setTransform === 'function') {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
   }
-  return { w, h, dpr, ctx };
+  return { w, h, dpr, ctx: canvas.getContext('2d') };
 }
 
 export const store = {
@@ -209,6 +218,26 @@ const P = {
   cam: '<path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/>',
   pointer: '<path d="M5 3l14 7-6 2-2 6z"/>',
   keyboard: '<rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h0M10 10h0M14 10h0M18 10h0M7 14h10"/>',
+  zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+  expand: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>',
+  minimize: '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="10" y1="14" x2="3" y2="21"/>',
+  chat: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  chatOff: '<path d="m3 3 18 18M9.5 9.5a8.38 8.38 0 0 1 3-.5h.5a8.48 8.48 0 0 1 8 8v.5a8.38 8.38 0 0 1-.9 3.8M5.7 5.7A8.48 8.48 0 0 0 3 11.5a8.38 8.38 0 0 0 .9 3.8L2 21l5.7-1.9a8.38 8.38 0 0 0 3.8.9h.5a8.4 8.4 0 0 0 3.2-.6"/>',
+  cursor: '<path d="M5 3l14 7-6 2-2 6z"/>',
+  cursorOff: '<path d="m3 3 18 18M7.8 7.8 5 3l14 7-2.7.9M13 13l-2 6-1.5-4.5"/>',
+  comment: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  laugh: '<circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9.5" r="1" fill="currentColor"/><circle cx="15" cy="9.5" r="1" fill="currentColor"/>',
+  cringe: '<circle cx="12" cy="12" r="9"/><line x1="8" y1="15" x2="16" y2="15"/><circle cx="9" cy="9.5" r="1" fill="currentColor"/><circle cx="15" cy="9.5" r="1" fill="currentColor"/>',
+  fire: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+  ratio: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  scroll: '<rect x="6" y="3" width="12" height="18" rx="6"/><line x1="12" y1="7" x2="12" y2="11"/>',
+  phone: '<rect x="6" y="2" width="12" height="20" rx="3"/><line x1="11" y1="18" x2="13" y2="18"/>',
+  doomscroll: '<rect x="6" y="2" width="12" height="20" rx="3"/><polyline points="9 10 12 13 15 10"/><polyline points="9 6 12 9 15 6"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
+  heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
 };
 export function icon(name, cls = '') {
   return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name] || P.sparkle}</svg>`;

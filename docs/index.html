@@ -240,7 +240,8 @@
 
   <!-- Fixed Topbar -->
   <header id="topbar">
-    <div class="topbar-bar">
+    <!-- Desktop Topbar Bar (>= 641px) -->
+    <div class="topbar-bar desktop-topbar">
       <!-- Left: Socials & Navigation -->
       <div class="nav-pill" style="gap:2px;">
         <button type="button" id="socialsMenuBtn" class="btn sm ghost" title="Socials Launcher">
@@ -315,7 +316,103 @@
         </button>
       </div>
     </div>
+
+    <!-- Dedicated Native Mobile Topbar (< 640px) -->
+    <div class="topbar-bar mobile-topbar">
+      <a href="#/" class="row items-center" style="gap:7px;text-decoration:none;">
+        <span class="mobile-logo-dot"></span>
+        <span class="mono font-bold" style="font-size:14px;letter-spacing:0.5px;color:var(--ink);">5IVESAW</span>
+        <span id="mobileAudioBadge" class="badge" style="font-size:9px;padding:1px 6px;background:var(--elevated);color:var(--accent);border:1px solid var(--line);">RADIO</span>
+      </a>
+
+      <div class="row items-center" style="gap:4px;">
+        <button type="button" id="mobileThemeCycleBtn" class="btn sm icon ghost" title="Cycle Theme Palette">
+          <span id="mobileThemeDot" class="dot-swatch" style="width:12px;height:12px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+        </button>
+        <button type="button" id="mobileSearchBtn" class="btn sm icon ghost" title="Search Commands">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button type="button" id="mobileMenuBtn" class="btn sm icon" title="Open Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:16px;height:16px;"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
   </header>
+
+  <!-- Dedicated Mobile Navigation Drawer Modal -->
+  <div id="mobileDrawerModal" class="modal" role="dialog" aria-modal="true">
+    <div class="card pad mobile-drawer-sheet">
+      <div class="row between items-center pb-3 border-b border-[var(--line)]">
+        <div class="row items-center" style="gap:8px;">
+          <span class="mono font-bold" style="font-size:16px;color:var(--ink);">5IVESAW</span>
+          <span class="chip xs font-mono">OSTANIA NODE</span>
+        </div>
+        <button type="button" id="closeMobileDrawerBtn" class="btn sm ghost font-bold">✕</button>
+      </div>
+
+      <div class="stack" style="gap:6px;margin:14px 0;">
+        <a href="#/" class="mobile-drawer-link" data-mview="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>
+          <span>Home Overview</span>
+        </a>
+        <a href="#/demos" class="mobile-drawer-link" data-mview="demos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Interactive Demos (15+)</span>
+        </a>
+        <a href="#/tools" class="mobile-drawer-link" data-mview="tools">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 13l-8 8-3-3 1.4-1.4M14.7 6.3 9.3 11.7M14.7 6.3 13 4.5a4 4 0 0 0-5.6 5.6l1.9 1.6M3 21l6-6"/></svg>
+          <span>In-Browser Creative Tools</span>
+        </a>
+        <a href="#/repos" class="mobile-drawer-link" data-mview="repos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>Repositories Directory (47+)</span>
+        </a>
+        <a href="#/5tube" class="mobile-drawer-link" data-mview="tube" style="color:#FF3B14;font-weight:700;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
+          <span>5Tube Synchronized Theater</span>
+        </a>
+      </div>
+
+      <div class="pb-3 border-b border-[var(--line)]">
+        <span class="eyebrow" style="font-size:10px;margin-bottom:8px;display:block;">SWITCH THEME PALETTE</span>
+        <div class="grid grid-2" style="gap:6px;" id="mobileThemeGrid">
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="latte">
+            <span class="dot-swatch" style="background:#B2A999;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Velvet Latte</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cream">
+            <span class="dot-swatch" style="background:#D7D0C3;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Warm Cream</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="readme">
+            <span class="dot-swatch" style="background:#A62929;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>README Red</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="chainsaw">
+            <span class="dot-swatch" style="background:linear-gradient(135deg, #FF3B14, #FFC700);width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Chainsaw</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="ostania">
+            <span class="dot-swatch" style="background:#245C49;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Ostania</span>
+          </button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cyber">
+            <span class="dot-swatch" style="background:#38BDF8;width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;"></span>
+            <span>Cyber Cobalt</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-3">
+        <span class="eyebrow" style="font-size:10px;margin-bottom:8px;display:block;">CONNECT &amp; LINKS</span>
+        <div class="row wrap" style="gap:8px;">
+          <a href="https://github.com/5ivesaw" target="_blank" rel="noopener noreferrer" class="btn sm ghost">GitHub ↗</a>
+          <a href="https://discord.com" target="_blank" rel="noopener noreferrer" class="btn sm ghost">Discord ↗</a>
+          <a href="https://youtube.com/@5ivesaw" target="_blank" rel="noopener noreferrer" class="btn sm ghost">YouTube ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Main Canvas -->
   <main id="appMain" class="max-w-5xl w-full mx-auto px-4 sm:px-6 pb-24">
@@ -414,8 +511,8 @@
               <span class="mono xs font-bold" style="color:var(--ink);">In-Browser Quick Scratchpad</span>
             </div>
             <div class="seg" id="quickToolSeg">
-              <button type="button" data-qtool="dev" class="bg-paper-surface font-semibold">⚡ Dev Scratchpad</button>
-              <button type="button" data-qtool="image">🖼️ Instant Image Dropper</button>
+              <button type="button" data-qtool="dev" class="bg-paper-surface font-semibold">Dev Scratchpad</button>
+              <button type="button" data-qtool="image">Instant Image Dropper</button>
             </div>
           </div>
 
@@ -441,7 +538,7 @@
             <div id="quickDropZone" class="well center p-4 rounded-xl cursor-pointer" style="border:2px dashed var(--line);text-align:center;">
               <input type="file" id="quickImageInput" accept="image/*" hidden />
               <div class="stack center" style="gap:4px;">
-                <span style="font-size:24px;">📥</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="28" height="28" style="margin:0 auto;color:var(--accent);"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
                 <span class="mono xs font-semibold text-paper-ink">Drag &amp; Drop an image here or click to browse</span>
                 <span class="mono xs faint">Instantly convert to WebP / PNG / AVIF locally in your browser</span>
               </div>
@@ -463,7 +560,7 @@
           <!-- 1. Image Studio -->
           <a href="#/tools/image" class="tile hover pop-in" style="padding:16px;">
             <div class="row between">
-              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">🖼️ TOOL</span>
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">IMAGE TOOL</span>
               <span class="accent font-medium text-xs">Launch Studio ↗</span>
             </div>
             <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Image Studio</h3>
@@ -479,7 +576,7 @@
           <!-- 2. Audio Cutter -->
           <a href="#/tools/audio" class="tile hover pop-in" style="padding:16px;">
             <div class="row between">
-              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">🎵 TOOL</span>
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">AUDIO TOOL</span>
               <span class="accent font-medium text-xs">Launch Cutter ↗</span>
             </div>
             <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Audio Cutter</h3>
@@ -495,7 +592,7 @@
           <!-- 3. Video Cutter -->
           <a href="#/tools/video" class="tile hover pop-in" style="padding:16px;">
             <div class="row between">
-              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">🎬 TOOL</span>
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">VIDEO TOOL</span>
               <span class="accent font-medium text-xs">Launch Cutter ↗</span>
             </div>
             <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Video Cutter</h3>
@@ -510,7 +607,7 @@
           <!-- 4. Dev Toolkit -->
           <a href="#/tools/dev" class="tile hover pop-in" style="padding:16px;">
             <div class="row between">
-              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">⚡ TOOL</span>
+              <span class="tl-sticker" style="font-size:9px;padding:2px 8px;">DEV TOOL</span>
               <span class="accent font-medium text-xs">Launch Toolkit ↗</span>
             </div>
             <h3 class="font-semibold" style="margin-top:6px;font-size:16px;color:var(--ink);">Dev Toolkit</h3>
@@ -545,14 +642,14 @@
           <div class="row between wrap items-center" style="gap:10px;margin-bottom:12px;">
             <div class="row items-center" style="gap:8px;">
               <span class="badge" style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;">LIVE PREVIEW</span>
-              <span class="mono xs font-bold" id="playgroundDemoTitle" style="color:var(--ink);">🌧️ Matrix Digital Rain &amp; Neural Mirror</span>
+              <span class="mono xs font-bold" id="playgroundDemoTitle" style="color:var(--ink);">Matrix Digital Rain &amp; Neural Mirror</span>
             </div>
             <!-- Interactive Demo Tabs -->
             <div class="seg" id="playgroundTabsSeg" style="overflow-x:auto;">
-              <button type="button" data-pdemo="matrix" class="bg-paper-surface font-semibold" title="Matrix Digital Rain with Webcam or Pulse">🌧️ Matrix Rain</button>
-              <button type="button" data-pdemo="synth" title="Cyber Theremin Audio Synth & CRT Scope">⚡ Cyber Synth</button>
-              <button type="button" data-pdemo="ascii" title="ASCII Video & Cursed Text Engine">📹 ASCII Cam</button>
-              <button type="button" data-pdemo="pathfinder" title="A* Pathfinder Heuristic Grid">🧭 A* Maze</button>
+              <button type="button" data-pdemo="matrix" class="bg-paper-surface font-semibold" title="Matrix Digital Rain with Webcam or Pulse">Matrix Rain</button>
+              <button type="button" data-pdemo="synth" title="Cyber Theremin Audio Synth & CRT Scope">Cyber Synth</button>
+              <button type="button" data-pdemo="ascii" title="ASCII Video & Cursed Text Engine">ASCII Cam</button>
+              <button type="button" data-pdemo="pathfinder" title="A* Pathfinder Heuristic Grid">A* Maze</button>
             </div>
           </div>
 
@@ -569,7 +666,7 @@
 
           <!-- Playground Bar -->
           <div class="row between wrap items-center" style="margin-top:12px;gap:8px;">
-            <div class="row items-center" style="gap:8px;">
+            <div class="row wrap items-center" style="gap:8px;">
               <button type="button" id="playgroundWebcamBtn" class="btn sm">
                 <span data-icon="cam"></span> Toggle Webcam
               </button>
@@ -722,7 +819,7 @@
       <!-- Right Volume & Queue Toggle -->
       <div class="row" style="gap:8px;flex:1 1 210px;justify-content:flex-end;">
         <button type="button" id="dockLiveAudioBtn" class="btn sm ghost" title="Enable Live Hardware Audio / Mic Spectrum" style="padding:0 8px;height:28px;font-size:11px;font-family:var(--font-mono);gap:4px;">
-          <span>🎤</span> <span class="hidden sm:inline">Live Audio</span>
+          <span data-icon="mic"></span> <span class="hidden sm:inline">Live Audio</span>
         </button>
         <button type="button" id="dockMuteBtn" class="btn sm icon ghost" title="Mute"><span data-icon="vol"></span></button>
         <input type="range" id="dockVolSlider" min="0" max="100" value="45" style="max-width:80px;" title="Volume" />
@@ -837,38 +934,62 @@
   <!-- CUSTOM CONTEXT MENU (Right Click) -->
   <div id="customContextMenu" class="context-menu hidden">
     <div class="context-menu-item" data-action="play-pause">
-      <span class="context-icon">▶</span>
+      <span class="context-icon"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 4.5v15l13-7.5z"/></svg></span>
       <span id="ctxPlayText">Play / Pause Radio</span>
       <span class="context-kbd">Space</span>
     </div>
     <div class="context-menu-item" data-action="next-track">
-      <span class="context-icon">⏭</span>
+      <span class="context-icon"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M5 5v14l10-7z"/><rect x="16.5" y="5" width="2.5" height="14" rx="1"/></svg></span>
       <span>Next Track</span>
     </div>
     <div class="context-menu-item" data-action="toggle-live-audio">
-      <span class="context-icon">🎤</span>
+      <span class="context-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
       <span id="ctxLiveAudioText">Live Audio Sync (Mic)</span>
     </div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item" data-action="open-cmd">
-      <span class="context-icon">⌘</span>
+      <span class="context-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h0M10 10h0M14 10h0M18 10h0M7 14h10"/></svg></span>
       <span>Command Palette</span>
       <span class="context-kbd">⌘K</span>
     </div>
     <div class="context-menu-item" data-action="open-5tube">
-      <span class="context-icon">👥</span>
+      <span class="context-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
       <span>5Tube Multiplayer</span>
     </div>
     <div class="context-menu-divider"></div>
     <div class="context-menu-item" data-action="cycle-theme">
-      <span class="context-icon">🎨</span>
+      <span class="context-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.5" fill="currentColor"/><circle cx="12" cy="7" r="1.5" fill="currentColor"/><circle cx="16" cy="10" r="1.5" fill="currentColor"/></svg></span>
       <span>Next Theme Palette</span>
     </div>
     <div class="context-menu-item" data-action="copy-url">
-      <span class="context-icon">🔗</span>
+      <span class="context-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/></svg></span>
       <span>Copy Page Link</span>
     </div>
   </div>
+
+  <!-- Dedicated Mobile App Bottom Navigation Bar (< 640px) -->
+  <nav id="mobileBottomNav" aria-label="Mobile Navigation">
+    <a href="#/" class="mob-tab-btn active" data-tab="home">
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>
+      <span class="mob-tab-label">Home</span>
+    </a>
+    <a href="#/demos" class="mob-tab-btn" data-tab="demos">
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span class="mob-tab-label">Demos</span>
+    </a>
+    <a href="#/tools" class="mob-tab-btn" data-tab="tools">
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 0 0 5 5L21 13l-8 8-3-3 1.4-1.4M14.7 6.3 9.3 11.7M14.7 6.3 13 4.5a4 4 0 0 0-5.6 5.6l1.9 1.6M3 21l6-6"/></svg>
+      <span class="mob-tab-label">Tools</span>
+    </a>
+    <a href="#/repos" class="mob-tab-btn" data-tab="repos">
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      <span class="mob-tab-label">Repos</span>
+    </a>
+    <a href="#/5tube" class="mob-tab-btn" data-tab="tube">
+      <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
+      <span class="mob-tab-label">5Tube</span>
+    </a>
+  </nav>
 
   <!-- Toast Host -->
   <div class="toast-host" role="status" aria-live="polite"></div>

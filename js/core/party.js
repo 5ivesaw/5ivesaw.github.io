@@ -325,6 +325,49 @@ export class PartySession {
         break;
       }
 
+      case 'comment-scroll': {
+        this.emit('comment-scroll', {
+          ratio: msg.ratio,
+          from: msg.from,
+          user: msg.user || 'Friend'
+        });
+        break;
+      }
+
+      case 'comment-reaction': {
+        this.emit('comment-reaction', {
+          commentId: msg.commentId,
+          reaction: msg.reaction,
+          user: msg.user || 'Friend'
+        });
+        break;
+      }
+
+      case 'party-comment': {
+        this.emit('party-comment', {
+          comment: msg.comment
+        });
+        break;
+      }
+
+      case 'doomscroll-seek': {
+        this.emit('doomscroll-seek', {
+          index: msg.index,
+          videoId: msg.videoId,
+          title: msg.title || '',
+          user: msg.user || 'Friend'
+        });
+        break;
+      }
+
+      case 'doomscroll-reaction': {
+        this.emit('doomscroll-reaction', {
+          reaction: msg.reaction,
+          user: msg.user || 'Friend'
+        });
+        break;
+      }
+
       case 'peer-left': {
         this.peers.delete(msg.peerId);
         this.emit('peer-leave', msg.peerId);
@@ -407,6 +450,61 @@ export class PartySession {
     this.broadcast(msg);
     // Also emit locally
     this.emit('chat', msg);
+  }
+
+  sendCommentScroll(ratio) {
+    if (!this.code) return;
+    this.broadcast({
+      type: 'comment-scroll',
+      ratio,
+      user: this.user.name
+    });
+  }
+
+  sendCommentReaction(commentId, reaction) {
+    if (!this.code) return;
+    const msg = {
+      type: 'comment-reaction',
+      commentId,
+      reaction,
+      user: this.user.name
+    };
+    this.broadcast(msg);
+    this.emit('comment-reaction', msg);
+  }
+
+  sendPartyComment(comment) {
+    if (!this.code || !comment) return;
+    const msg = {
+      type: 'party-comment',
+      comment
+    };
+    this.broadcast(msg);
+    this.emit('party-comment', msg);
+  }
+
+  sendDoomscrollSeek(index, videoId, title = '') {
+    if (!this.code) return;
+    const msg = {
+      type: 'doomscroll-seek',
+      index,
+      videoId,
+      title,
+      user: this.user.name
+    };
+    this.broadcast(msg);
+    this.emit('doomscroll-seek', msg);
+  }
+
+  sendDoomscrollReaction(reaction) {
+    if (!this.code) return;
+    const msg = {
+      type: 'doomscroll-reaction',
+      reaction,
+      user: this.user.name
+    };
+    this.broadcast(msg);
+    this.emit('doomscroll-reaction', msg);
   }
 
   // Host playback controls

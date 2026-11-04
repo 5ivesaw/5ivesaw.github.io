@@ -321,11 +321,11 @@ function renderRepoPage(repoName, mountPoint) {
             </a>
             ${liveSite ? `
               <a href="${liveSite}" target="_blank" rel="noopener noreferrer" class="btn sm ghost" style="border-color:var(--accent);color:var(--accent);">
-                🌐 Live Site ↗
+                ${icon('external')} Live Site ↗
               </a>
             ` : ''}
             <a href="https://github.com/5ivesaw/${repo.name}/archive/refs/heads/${repo.branch || 'main'}.zip" class="btn sm ghost" title="Download ZIP archive">
-              ↓ ZIP
+              ${icon('download')} ZIP
             </a>
           </div>
         </div>
@@ -340,7 +340,7 @@ function renderRepoPage(repoName, mountPoint) {
               <p class="xs muted" style="margin:0;">${demoLink.blurb}</p>
             </div>
             <a href="${demoLink.href}" ${demoLink.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn sm primary" style="background:var(--accent);border-color:var(--accent);box-shadow:0 4px 12px rgba(255,59,20,0.35);">
-              ⚡ Launch Interactive Demo ↗
+              ${icon('zap')} Launch Interactive Demo ↗
             </a>
           </div>
         ` : ''}
@@ -1320,19 +1320,19 @@ function initHomeDemoPlayground() {
       sfx('tick');
 
       if (activeDemo === 'matrix') {
-        titleEl.textContent = '🌧️ Matrix Digital Rain & Neural Mirror';
+        titleEl.textContent = 'Matrix Digital Rain & Neural Mirror';
         launchBtn.href = '#/demos/matrix-rain';
         hintEl.textContent = 'Move cursor or drag to disrupt rain';
       } else if (activeDemo === 'synth') {
-        titleEl.textContent = '⚡ Cyber Theremin Audio Synth & CRT Scope';
+        titleEl.textContent = 'Cyber Theremin Audio Synth & CRT Scope';
         launchBtn.href = '#/demos/audio-synth';
         hintEl.textContent = 'Click & drag anywhere to play synthesizer';
       } else if (activeDemo === 'ascii') {
-        titleEl.textContent = '📹 ASCII Video & Cursed Text Engine';
+        titleEl.textContent = 'ASCII Video & Cursed Text Engine';
         launchBtn.href = '#/demos/bad-apple';
         hintEl.textContent = 'Real-time ASCII downsampler & video feed';
       } else if (activeDemo === 'pathfinder') {
-        titleEl.textContent = '🧭 A* Pathfinder Heuristic Grid';
+        titleEl.textContent = 'A* Pathfinder Heuristic Grid';
         launchBtn.href = '#/demos/pathfinder';
         hintEl.textContent = 'Click cells to paint walls and reroute path';
       }
@@ -1680,7 +1680,7 @@ function initMusicDock() {
       if (active) {
         liveAudioBtn.style.background = 'var(--accent)';
         liveAudioBtn.style.color = '#fff';
-        toast('🎤 Live Hardware Audio Connected! Reactors now reading literal sound frequencies!', 'ok');
+        toast('Live Hardware Audio Connected! Visualizers reading real audio frequencies.', 'ok');
         sfx('toggleOn');
       } else {
         liveAudioBtn.style.background = '';
@@ -1871,7 +1871,7 @@ function renderCmdResults(q) {
   const res = $('#cmdPaletteResults');
 
   const items = [
-    { label: '5Tube: Multiplayer Synchronized Theater', sub: 'Party 👥', action: () => location.hash = '#/5tube' },
+    { label: '5Tube: Multiplayer Synchronized Theater', sub: 'Multiplayer Party', action: () => location.hash = '#/5tube' },
     ...TOOLS.map(t => ({ label: `Tool: ${t.title}`, sub: 'Tools', action: () => location.hash = `#/tools/${t.id}` })),
     ...DEMOS.map(d => ({ label: `Demo: ${d.title}`, sub: 'Demos', action: () => location.hash = `#/demos/${d.id}` })),
     ...Object.entries(THEMES).map(([k, name]) => ({ label: `Theme: ${name}`, sub: 'Palette', action: () => applyTheme(k) })),
@@ -2033,7 +2033,7 @@ async function initApp() {
   $('#revChainsawBtn')?.addEventListener('click', () => {
     state.csmBoost = 6;
     sfx('rev');
-    toast('⚡ CHAINSAW RIPCORD ENGAGED!', 'ok');
+    toast('CHAINSAW RIPCORD ENGAGED!', 'ok');
     setTimeout(() => state.csmBoost = 1, 2400);
   });
 

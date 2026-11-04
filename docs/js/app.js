@@ -85,7 +85,7 @@ function applyTheme(tone, x, y) {
   sfx('toggleOn');
 }
 
-// Hero background particle canvas
+// Hero background particle canvas (Optimized: 0 style recalcs, pauses when offscreen or in subviews)
 function initHeroCanvas() {
   const canvas = $('#heroFieldCanvas');
   if (!canvas) return;
@@ -93,27 +93,41 @@ function initHeroCanvas() {
   let w = 0, h = 0;
   let mx = -1000, my = -1000;
   let phase = 0;
+  let cachedAccent = cssVar('--accent') || '#942929';
+  onThemeChange(() => { cachedAccent = cssVar('--accent') || '#942929'; });
 
   function resize() {
     w = canvas.width = canvas.parentElement.clientWidth;
     h = canvas.height = canvas.parentElement.clientHeight;
   }
   resize();
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', resize, { passive: true });
 
   canvas.parentElement.addEventListener('mousemove', e => {
-    const r = canvas.getBoundingClientRect();
-    mx = e.clientX - r.left;
-    my = e.clientY - r.top;
-  });
-  canvas.parentElement.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+    mx = e.offsetX;
+    my = e.offsetY;
+  }, { passive: true });
+  canvas.parentElement.addEventListener('mouseleave', () => { mx = -1000; my = -1000; }, { passive: true });
+
+  const homeSections = $('#homeSections');
+  let isVisible = true;
+  const io = new IntersectionObserver(([entry]) => {
+    isVisible = entry.isIntersecting;
+  }, { threshold: 0.05 });
+  io.observe(canvas.parentElement);
 
   function draw() {
-    ctx.clearRect(0, 0, w, h);
-    const accent = cssVar('--accent') || '#942929';
-    ctx.fillStyle = accent;
+    if (!isVisible || document.hidden || (homeSections && homeSections.classList.contains('hidden'))) {
+      requestAnimationFrame(draw);
+      return;
+    }
 
-    const spacing = 28;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = cachedAccent;
+
+    // Use larger spacing on small screens to save battery & GPU
+    const isMobile = w < 640;
+    const spacing = isMobile ? 44 : 30;
     phase += 0.024 * state.csmBoost;
 
     const pulse = music.pulse || { isPlaying: false, kick: 0, energy: 0 };
@@ -124,7 +138,7 @@ function initHeroCanvas() {
       for (let y = spacing; y < h; y += spacing) {
         const dx = x - mx;
         const dy = y - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dist = Math.hypot(dx, dy);
         const wave = (Math.sin(x * 0.022 + y * 0.022 + phase) * (2.2 * state.csmBoost)) + (musicKick * Math.sin((x + y) * 0.03 - phase * 2) * 4);
         let pushX = 0, pushY = 0;
         let radius = 1.2 + (musicKick * 0.9);
@@ -307,11 +321,11 @@ function renderRepoPage(repoName, mountPoint) {
             </a>
             ${liveSite ? `
               <a href="${liveSite}" target="_blank" rel="noopener noreferrer" class="btn sm ghost" style="border-color:var(--accent);color:var(--accent);">
-                🌐 Live Site ↗
+                ${icon('external')} Live Site ↗
               </a>
             ` : ''}
             <a href="https://github.com/5ivesaw/${repo.name}/archive/refs/heads/${repo.branch || 'main'}.zip" class="btn sm ghost" title="Download ZIP archive">
-              ↓ ZIP
+              ${icon('download')} ZIP
             </a>
           </div>
         </div>
@@ -326,7 +340,7 @@ function renderRepoPage(repoName, mountPoint) {
               <p class="xs muted" style="margin:0;">${demoLink.blurb}</p>
             </div>
             <a href="${demoLink.href}" ${demoLink.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn sm primary" style="background:var(--accent);border-color:var(--accent);box-shadow:0 4px 12px rgba(255,59,20,0.35);">
-              ⚡ Launch Interactive Demo ↗
+              ${icon('zap')} Launch Interactive Demo ↗
             </a>
           </div>
         ` : ''}
@@ -1306,19 +1320,19 @@ function initHomeDemoPlayground() {
       sfx('tick');
 
       if (activeDemo === 'matrix') {
-        titleEl.textContent = '🌧️ Matrix Digital Rain & Neural Mirror';
+        titleEl.textContent = 'Matrix Digital Rain & Neural Mirror';
         launchBtn.href = '#/demos/matrix-rain';
         hintEl.textContent = 'Move cursor or drag to disrupt rain';
       } else if (activeDemo === 'synth') {
-        titleEl.textContent = '⚡ Cyber Theremin Audio Synth & CRT Scope';
+        titleEl.textContent = 'Cyber Theremin Audio Synth & CRT Scope';
         launchBtn.href = '#/demos/audio-synth';
         hintEl.textContent = 'Click & drag anywhere to play synthesizer';
       } else if (activeDemo === 'ascii') {
-        titleEl.textContent = '📹 ASCII Video & Cursed Text Engine';
+        titleEl.textContent = 'ASCII Video & Cursed Text Engine';
         launchBtn.href = '#/demos/bad-apple';
         hintEl.textContent = 'Real-time ASCII downsampler & video feed';
       } else if (activeDemo === 'pathfinder') {
-        titleEl.textContent = '🧭 A* Pathfinder Heuristic Grid';
+        titleEl.textContent = 'A* Pathfinder Heuristic Grid';
         launchBtn.href = '#/demos/pathfinder';
         hintEl.textContent = 'Click cells to paint walls and reroute path';
       }
@@ -1666,7 +1680,7 @@ function initMusicDock() {
       if (active) {
         liveAudioBtn.style.background = 'var(--accent)';
         liveAudioBtn.style.color = '#fff';
-        toast('🎤 Live Hardware Audio Connected! Reactors now reading literal sound frequencies!', 'ok');
+        toast('Live Hardware Audio Connected! Visualizers reading real audio frequencies.', 'ok');
         sfx('toggleOn');
       } else {
         liveAudioBtn.style.background = '';
@@ -1857,7 +1871,7 @@ function renderCmdResults(q) {
   const res = $('#cmdPaletteResults');
 
   const items = [
-    { label: '5Tube: Multiplayer Synchronized Theater', sub: 'Party 👥', action: () => location.hash = '#/5tube' },
+    { label: '5Tube: Multiplayer Synchronized Theater', sub: 'Multiplayer Party', action: () => location.hash = '#/5tube' },
     ...TOOLS.map(t => ({ label: `Tool: ${t.title}`, sub: 'Tools', action: () => location.hash = `#/tools/${t.id}` })),
     ...DEMOS.map(d => ({ label: `Demo: ${d.title}`, sub: 'Demos', action: () => location.hash = `#/demos/${d.id}` })),
     ...Object.entries(THEMES).map(([k, name]) => ({ label: `Theme: ${name}`, sub: 'Palette', action: () => applyTheme(k) })),
@@ -1954,11 +1968,72 @@ async function initApp() {
   $('#heroOpenSocialsBtn')?.addEventListener('click', openSocials);
   $('#closeSocialsLauncherBtn')?.addEventListener('click', closeSocials);
 
+  // Dedicated Mobile Navigation Drawer & Bottom Tabs
+  const mobileDrawer = $('#mobileDrawerModal');
+  const openMobileDrawer = () => {
+    if (!mobileDrawer) return;
+    mobileDrawer.classList.remove('hidden');
+    mobileDrawer.classList.add('open');
+    sfx('open');
+  };
+  const closeMobileDrawer = () => {
+    if (!mobileDrawer) return;
+    mobileDrawer.classList.remove('open');
+    mobileDrawer.classList.add('hidden');
+    sfx('close');
+  };
+
+  $('#mobileMenuBtn')?.addEventListener('click', openMobileDrawer);
+  $('#closeMobileDrawerBtn')?.addEventListener('click', closeMobileDrawer);
+  mobileDrawer?.addEventListener('click', e => {
+    if (e.target === mobileDrawer || e.target.closest('.mobile-drawer-link')) {
+      closeMobileDrawer();
+    }
+  });
+
+  $('#mobileSearchBtn')?.addEventListener('click', openCmdPalette);
+
+  // Mobile Theme Cycle
+  const mobileThemeCycleBtn = $('#mobileThemeCycleBtn');
+  const mobileThemeDot = $('#mobileThemeDot');
+  const TONE_KEYS = ['latte', 'cream', 'readme', 'chainsaw', 'ostania', 'cyber'];
+  mobileThemeCycleBtn?.addEventListener('click', e => {
+    const cur = document.documentElement.dataset.tone || 'latte';
+    const next = TONE_KEYS[(TONE_KEYS.indexOf(cur) + 1) % TONE_KEYS.length];
+    applyTheme(next, e.clientX, e.clientY);
+    if (mobileThemeDot) mobileThemeDot.style.background = cssVar('--accent');
+    toast(`Palette: ${next.toUpperCase()}`, 'info');
+  });
+
+  // Mobile theme choices in drawer
+  $$('.mobile-theme-choice').forEach(btn => {
+    btn.addEventListener('click', e => {
+      applyTheme(btn.dataset.setTone, e.clientX, e.clientY);
+      closeMobileDrawer();
+    });
+  });
+
+  // Update active tab on hashchange
+  function updateMobileNavTab() {
+    const hash = location.hash || '#/';
+    $$('.mob-tab-btn').forEach(btn => {
+      const tab = btn.dataset.tab;
+      const isActive = (tab === 'home' && (hash === '#/' || hash === '')) ||
+                       (tab === 'demos' && hash.startsWith('#/demos')) ||
+                       (tab === 'tools' && hash.startsWith('#/tools')) ||
+                       (tab === 'repos' && hash.startsWith('#/repos')) ||
+                       (tab === 'tube' && (hash.startsWith('#/5tube') || hash.startsWith('#/tube')));
+      btn.classList.toggle('active', isActive);
+    });
+  }
+  window.addEventListener('hashchange', updateMobileNavTab);
+  updateMobileNavTab();
+
   // Chainsaw Ripcord Mode
   $('#revChainsawBtn')?.addEventListener('click', () => {
     state.csmBoost = 6;
     sfx('rev');
-    toast('⚡ CHAINSAW RIPCORD ENGAGED!', 'ok');
+    toast('CHAINSAW RIPCORD ENGAGED!', 'ok');
     setTimeout(() => state.csmBoost = 1, 2400);
   });
 

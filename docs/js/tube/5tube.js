@@ -1,11 +1,11 @@
 // 5Tube — Synchronized Multiplayer YouTube Theater & Party Player.
-// Real-time peer cursors, synchronized playback, live chat & theater immersion.
+// Real-time peer cursors, synchronized playback, live chat, synced comments & doomscroll immersion.
 import {
-  $, $$, icon, formatTime, copyText, toast, store, cssVar
+  $, $$, icon, formatTime, copyText, toast, store, cssVar, esc
 } from '../core/util.js';
 import { sfx } from '../core/sfx.js';
 import { music } from '../core/music.js';
-import { party, generatePartyCode } from '../core/party.js';
+import { party, generatePartyCode, getRandomColor } from '../core/party.js';
 
 let ytPlayer = null;
 let ytReady = false;
@@ -13,12 +13,39 @@ let isTheater = false;
 let hidePartyUi = false;
 let showCursors = true;
 let showClicks = true;
-let floatingChatOnly = false;
+let showFloatingChat = true;
+let isSyncScrollActive = true;
+let isRemotelyScrolling = false;
+let scrollBroadcastTimer = null;
+let hudIdleTimer = null;
 let peerCursors = new Map(); // id -> { x, y, targetX, targetY, name, color, isHost, lastUpdate }
 let clickRipples = []; // [{ x, y, color, r, maxR, alpha }]
 let animFrame = null;
 let lastCursorBroadcast = 0;
 let isSeekingFromRemote = false;
+
+// Comments state
+let currentComments = [];
+let syncedComments = [];
+let activeVideoId = 'eXRWHzV72sU';
+
+// Doomscroll state
+let isDoomscroll = false;
+let doomIndex = 0;
+const DOOMSCROLL_FEED = [
+  { id: 'jfKfPfyJRdk', title: 'lofi hip hop radio - beats to relax/study to', author: 'Lofi Girl' },
+  { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito (Loop Drop)', author: 'Luis Fonsi' },
+  { id: '9bZkp7q19f0', title: 'PSY - GANGNAM STYLE', author: 'OfficialPsy' },
+  { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk', author: 'Mark Ronson' },
+  { id: '09R8_2nJtjg', title: 'Maroon 5 - Sugar', author: 'Maroon 5' },
+  { id: 'CevxZvSJLk8', title: 'Katy Perry - Roar', author: 'Katy Perry' },
+  { id: 'hT_nvWreIhg', title: 'OneRepublic - Counting Stars', author: 'OneRepublic' },
+  { id: 'YQHsXMglC9A', title: 'Adele - Hello', author: 'Adele' },
+  { id: 'fJ9rUzIMcZQ', title: 'Queen - Bohemian Rhapsody', author: 'Queen Official' },
+  { id: 'JGwWNGJdvx8', title: 'Ed Sheeran - Shape of You', author: 'Ed Sheeran' },
+  { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again', author: 'Wiz Khalifa' },
+  { id: '2Vv-BfVoq4g', title: 'Ed Sheeran - Perfect', author: 'Ed Sheeran' }
+];
 
 // YouTube URL parser
 export function parseYouTubeId(input) {
@@ -33,6 +60,7 @@ export default {
   mount(root, api) {
     // Pause background radio while in 5Tube
     try { music.pause(); } catch (e) {}
+    document.body.classList.add('in-fivetube');
 
     // Check party param in URL hash
     const hash = location.hash;
@@ -71,8 +99,12 @@ export default {
             </div>
           </div>
 
-          <!-- Right: Theater, Party Menu, Downloads -->
+          <!-- Right: Doomscroll, Theater, Party Menu, Downloads -->
           <div class="row items-center" style="gap:6px;">
+            <button type="button" id="doomscrollToggleBtn" class="btn sm ghost" title="Synced Doomscroll Mode">
+              ${icon('doomscroll')} <span class="mono xs">Doomscroll</span>
+            </button>
+
             <button type="button" id="theaterToggleBtn" class="btn sm ghost" title="Toggle Theater Mode (Shortcut: T)">
               <span id="theaterBtnIcon">${icon('expand')}</span>
               <span class="mono xs" id="theaterBtnText">Theater</span>
@@ -82,12 +114,12 @@ export default {
               ${icon('download')} <span class="mono xs">Save</span>
             </button>
 
-            <button type="button" id="partyMenuBtn" class="btn sm primary" style="border-radius:var(--r-full);">
-              👥 <span id="partyMemberCount">1</span>
+            <button type="button" id="partyMenuBtn" class="btn sm primary" style="border-radius:var(--r-full);padding:0 10px;height:30px;">
+              ${icon('users')} <span id="partyMemberCount">1</span>
             </button>
 
-            <button type="button" id="ghostModeToggleBtn" class="btn sm ghost" title="Distraction-Free Zen View">
-              👁️
+            <button type="button" id="ghostModeToggleBtn" class="btn sm ghost" title="Distraction-Free Zen View" style="padding:0 8px;height:30px;">
+              ${icon('eye')}
             </button>
           </div>
         </header>
@@ -103,13 +135,21 @@ export default {
               <!-- Multiplayer Floating Overlay (Pings & Cursors) -->
               <canvas id="fivetubeCursorCanvas" class="fivetube-cursor-canvas"></canvas>
 
-              <!-- Floating Chat Overlay (Zen Mode) -->
+              <!-- Floating Chat Overlay (Discord voice-call overlay style) -->
               <div id="fivetubeFloatingChat" class="fivetube-floating-chat"></div>
 
-              <!-- HUD Exit Theater Floating Button -->
-              <button type="button" id="hudExitTheaterBtn" class="hud-exit-btn hidden" title="Exit Theater Mode (Esc or T)">
-                ${icon('minimize')} Exit Theater
-              </button>
+              <!-- Sleek Theater Mini Controls HUD (Small, Auto-Hiding) -->
+              <div id="theaterControlsHud" class="theater-controls-hud hidden">
+                <button type="button" id="hudToggleChatBtn" class="hud-micro-btn" title="Toggle Floating Chat (Shortcut: C)" aria-label="Toggle Floating Chat">
+                  <span id="hudChatIcon">${icon('chat')}</span>
+                </button>
+                <button type="button" id="hudToggleCursorsBtn" class="hud-micro-btn" title="Toggle Friend Cursors (Shortcut: M)" aria-label="Toggle Friend Cursors">
+                  <span id="hudCursorIcon">${icon('cursor')}</span>
+                </button>
+                <button type="button" id="hudExitTheaterBtn" class="hud-micro-btn hud-exit-accent" title="Exit Theater Mode (Shortcut: Esc or T)" aria-label="Exit Theater">
+                  ${icon('minimize')}
+                </button>
+              </div>
 
               <!-- Sync Out-of-sync Floating Notification -->
               <div id="resyncNotice" class="resync-pill hidden">
@@ -128,7 +168,7 @@ export default {
                   <span id="tubeCurrentAuthor">5ivesaw</span>
                   <span>•</span>
                   <span id="tubeSyncBadge" class="badge" style="font-size:9.5px;">Synced</span>
-                  <span id="tubeHostBadge" class="badge hidden" style="background:var(--accent);color:#fff;font-size:9px;">👑 You are Host</span>
+                  <span id="tubeHostBadge" class="badge hidden" style="background:var(--accent);color:#fff;font-size:9px;">Host</span>
                 </div>
               </div>
 
@@ -138,17 +178,18 @@ export default {
                 <button type="button" id="hostPlayPauseBtn" class="btn sm primary" title="Play / Pause for Party">${icon('play')}</button>
                 <button type="button" id="hostNextBtn" class="btn sm ghost" title="Next Track">${icon('next')}</button>
                 <button type="button" id="hostForceSyncBtn" class="btn sm ghost" title="Broadcast exact timestamp to all members">
-                  ⚡ Force Sync
+                  ${icon('zap')} Force Sync
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Right: Party Drawer (Chat, Queue, Members) -->
+          <!-- Right: Party Drawer (Chat, Comments, Queue, Members) -->
           <aside id="fivetubeSidebar" class="fivetube-sidebar card">
             <!-- Tabs -->
             <div class="fivetube-tabs row border-b border-paper-line">
               <button type="button" data-tube-tab="chat" class="fivetube-tab active flex-1 font-mono text-xs">Chat</button>
+              <button type="button" data-tube-tab="comments" class="fivetube-tab flex-1 font-mono text-xs">Comments (<span id="tubeCommentsCount">0</span>)</button>
               <button type="button" data-tube-tab="queue" class="fivetube-tab flex-1 font-mono text-xs">Queue (<span id="queueCount">0</span>)</button>
               <button type="button" data-tube-tab="party" class="fivetube-tab flex-1 font-mono text-xs">Party (<span id="memberTabCount">1</span>)</button>
             </div>
@@ -156,11 +197,54 @@ export default {
             <!-- Chat Panel -->
             <div id="tabContentChat" class="fivetube-tab-content active stack flex-1 min-h-0">
               <div id="tubeChatLog" class="tube-chat-log flex-1">
-                <div class="chat-system-msg mono xs faint">Welcome to 5Tube. Invite friends to watch together in sync!</div>
+                <div class="chat-system-msg mono xs faint">Welcome to 5Tube. Watch and chat in real-time sync with friends!</div>
               </div>
               <form id="tubeChatForm" class="row border-t border-paper-line p-2" style="gap:6px;">
                 <input type="text" id="tubeChatInput" placeholder="Send a message..." class="input xs flex-1" style="height:32px;" autocomplete="off"/>
                 <button type="submit" class="btn sm primary" style="height:32px;padding:0 12px;">Send</button>
+              </form>
+            </div>
+
+            <!-- Comments Panel with Synced Scroll, Judging/Laughing & Custom Fake Comments -->
+            <div id="tabContentComments" class="fivetube-tab-content stack flex-1 min-h-0 hidden">
+              <div class="tube-sync-scroll-bar">
+                <button type="button" id="toggleSyncScrollBtn" class="sync-scroll-pill active" title="Toggle Synced Scrolling with Friends">
+                  <span id="syncScrollIcon">${icon('zap')}</span>
+                  <span id="syncScrollText">Sync-Scroll: ON</span>
+                </button>
+                <div class="row items-center" style="gap:6px;">
+                  <span id="syncScrollUserNotice" class="xs mono faint hidden truncate" style="max-width:110px;"></span>
+                  <button type="button" id="refreshCommentsBtn" class="btn sm ghost" title="Reload Comments" style="padding:2px 6px;height:24px;">
+                    ${icon('refresh')}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Comments List -->
+              <div id="tubeCommentsList" class="tube-comments-list">
+                <div class="text-center mono xs faint p-4">Loading comments...</div>
+              </div>
+
+              <!-- Add Synced Peer Comment Box -->
+              <form id="tubeSyncedCommentForm" class="fake-comment-form">
+                <div class="row items-center between" style="gap:6px;">
+                  <div class="row items-center" style="gap:4px;">
+                    <span class="mono xs faint" style="font-size:9.5px;">POST AS:</span>
+                    <select id="syncedCommentPersona" class="input xs font-mono" style="height:24px;padding:1px 6px;font-size:10px;">
+                      <option value="me">Myself (${esc(party.user.name)})</option>
+                      <option value="troll">Anonymous Troll</option>
+                      <option value="critic">Verified Critic</option>
+                      <option value="timetraveler">Time Traveler (2077)</option>
+                      <option value="ceo">YouTube CEO</option>
+                      <option value="mrbeast">MrBeast</option>
+                    </select>
+                  </div>
+                  <span class="badge" style="font-size:8.5px;background:rgba(16,185,129,0.2);color:#10B981;">Party Only</span>
+                </div>
+                <div class="row" style="gap:6px;">
+                  <input type="text" id="syncedCommentInput" placeholder="Add synced comment (only party sees)..." class="input xs flex-1" style="height:28px;" autocomplete="off"/>
+                  <button type="submit" class="btn sm primary" style="height:28px;padding:0 10px;font-size:11px;">Post</button>
+                </div>
               </form>
             </div>
 
@@ -211,7 +295,7 @@ export default {
                   </label>
                   <label class="row between items-center xs mono cursor-pointer">
                     <span>Float Chat on Video</span>
-                    <input type="checkbox" id="toggleFloatingChatCheck"/>
+                    <input type="checkbox" id="toggleFloatingChatCheck" checked/>
                   </label>
                 </div>
               </div>
@@ -224,6 +308,60 @@ export default {
             </div>
           </aside>
         </main>
+
+        <!-- Synced Doomscroll Shorts Overlay Mode -->
+        <div id="fivetubeDoomscrollOverlay" class="fivetube-doomscroll-overlay hidden">
+          <div id="doomscrollStageWrap" class="doomscroll-stage-wrap">
+            <div id="doomscrollPlayerMount" class="doomscroll-player-mount"></div>
+
+            <!-- Top Bar -->
+            <div class="doomscroll-top-bar">
+              <div class="row items-center" style="gap:6px;background:rgba(15,15,20,0.68);padding:4px 10px;border-radius:var(--r-full);backdrop-filter:blur(6px);">
+                <span class="status-dot"></span>
+                <span class="mono xs font-bold text-white">SYNCED DOOMSCROLL</span>
+                <span id="doomscrollCounterBadge" class="badge" style="font-size:9px;background:var(--accent);color:#fff;">1 / 12</span>
+              </div>
+              <button type="button" id="exitDoomscrollBtn" class="hud-micro-btn hud-exit-accent" title="Exit Doomscroll (Esc)">
+                ${icon('close')}
+              </button>
+            </div>
+
+            <!-- Bottom Video Info -->
+            <div class="doomscroll-bottom-info">
+              <div class="row items-center" style="gap:6px;">
+                <span class="badge" style="font-size:9.5px;background:rgba(255,255,255,0.2);color:#fff;">Shorts</span>
+                <span id="doomscrollAuthor" class="mono text-xs font-bold text-white">5ivesaw</span>
+              </div>
+              <p id="doomscrollTitle" class="text-sm font-semibold text-white line-clamp-2" style="margin:0;">Curated Transmission</p>
+              <span class="mono xs faint" style="color:rgba(255,255,255,0.7);font-size:10px;">Swipe / Arrow keys to scroll with party</span>
+            </div>
+
+            <!-- Right Action Rail -->
+            <div class="doomscroll-side-rail">
+              <button type="button" id="doomPrevBtn" class="doomscroll-rail-btn" title="Previous Short (Up Arrow)">
+                <span style="transform:rotate(-90deg);display:inline-flex;">${icon('arrowRight')}</span>
+              </button>
+              <button type="button" id="doomNextBtn" class="doomscroll-rail-btn" title="Next Short (Down Arrow)">
+                <span style="transform:rotate(90deg);display:inline-flex;">${icon('arrowRight')}</span>
+              </button>
+              <button type="button" data-doom-rx="fire" class="doomscroll-rail-btn" title="Send Fire Reaction">
+                ${icon('fire')}
+              </button>
+              <button type="button" data-doom-rx="laugh" class="doomscroll-rail-btn" title="Send Laugh Reaction">
+                ${icon('laugh')}
+              </button>
+              <button type="button" data-doom-rx="cringe" class="doomscroll-rail-btn" title="Send Cringe Reaction">
+                ${icon('cringe')}
+              </button>
+              <button type="button" data-doom-rx="heart" class="doomscroll-rail-btn" title="Send Heart Reaction">
+                ${icon('heart')}
+              </button>
+            </div>
+
+            <!-- Floating Reactions Container -->
+            <div id="doomscrollReactionsContainer"></div>
+          </div>
+        </div>
 
         <!-- Join Party Modal -->
         <div id="joinPartyModal" class="modal-backdrop hidden">
@@ -286,6 +424,11 @@ export default {
     const theaterBox = $('#fivetubeTheaterBox');
     const cursorCanvas = $('#fivetubeCursorCanvas');
     const floatingChat = $('#fivetubeFloatingChat');
+    const theaterHud = $('#theaterControlsHud');
+    const hudChatBtn = $('#hudToggleChatBtn');
+    const hudChatIcon = $('#hudChatIcon');
+    const hudCursorBtn = $('#hudToggleCursorsBtn');
+    const hudCursorIcon = $('#hudCursorIcon');
     const hudExitBtn = $('#hudExitTheaterBtn');
     const ctx = cursorCanvas.getContext('2d');
     const videoInput = $('#tubeVideoInput');
@@ -326,6 +469,7 @@ export default {
       const mount = $('#fivetubePlayerMount');
       if (!mount) return;
 
+      activeVideoId = initialId;
       mount.innerHTML = `<div id="fiveTubeYtIframe"></div>`;
 
       function createYt() {
@@ -350,6 +494,7 @@ export default {
             onReady: () => {
               ytReady = true;
               updateDownloadLinks(initialId);
+              loadComments(initialId);
               if (party.isHost) {
                 party.updateSyncState(initialId, 0, 'playing', 'FiveSaw Transmission', '5ivesaw');
               }
@@ -391,12 +536,74 @@ export default {
       if (snippet) snippet.textContent = `yt-dlp -f "bestvideo+bestaudio" https://www.youtube.com/watch?v=${vid}`;
     }
 
+    // Theater HUD Auto-Hide Proximity Logic
+    function showTheaterHud() {
+      if (!theaterHud || !isTheater) return;
+      theaterHud.classList.add('hud-active');
+      if (hudIdleTimer) clearTimeout(hudIdleTimer);
+      hudIdleTimer = setTimeout(() => {
+        theaterHud.classList.remove('hud-active');
+      }, 2600);
+    }
+
+    theaterBox?.addEventListener('pointermove', showTheaterHud, { passive: true });
+    theaterBox?.addEventListener('pointerdown', showTheaterHud, { passive: true });
+
+    theaterHud?.addEventListener('mouseenter', () => {
+      if (hudIdleTimer) clearTimeout(hudIdleTimer);
+      theaterHud.classList.add('hud-active');
+    });
+
+    theaterHud?.addEventListener('mouseleave', () => {
+      if (hudIdleTimer) clearTimeout(hudIdleTimer);
+      hudIdleTimer = setTimeout(() => {
+        theaterHud.classList.remove('hud-active');
+      }, 1000);
+    });
+
+    // Toggle Chat in Theater
+    hudChatBtn?.addEventListener('click', e => {
+      e.stopPropagation();
+      showFloatingChat = !showFloatingChat;
+      hudChatBtn.classList.toggle('is-muted', !showFloatingChat);
+      hudChatIcon.innerHTML = showFloatingChat ? icon('chat') : icon('chatOff');
+      if (floatingChat) floatingChat.classList.toggle('hidden', !showFloatingChat);
+      const chk = $('#toggleFloatingChatCheck');
+      if (chk) chk.checked = showFloatingChat;
+      toast(showFloatingChat ? 'Floating chat visible' : 'Floating chat muted', 'info');
+      sfx('toggleOn');
+    });
+
+    // Toggle Cursors in Theater
+    hudCursorBtn?.addEventListener('click', e => {
+      e.stopPropagation();
+      showCursors = !showCursors;
+      hudCursorBtn.classList.toggle('is-muted', !showCursors);
+      hudCursorIcon.innerHTML = showCursors ? icon('cursor') : icon('cursorOff');
+      const chk = $('#toggleCursorsCheck');
+      if (chk) chk.checked = showCursors;
+      if (!showCursors && ctx && cursorCanvas) {
+        ctx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+      }
+      toast(showCursors ? 'Friend cursors visible' : 'Friend cursors hidden', 'info');
+      sfx('toggleOn');
+    });
+
+    // Exit Theater button in HUD
+    hudExitBtn?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleTheater(false);
+    });
+
     // Theater Mode Toggle
     function toggleTheater(force) {
       isTheater = (force !== undefined) ? force : !isTheater;
       document.body.classList.toggle('theater-mode', isTheater);
       theaterBox.classList.toggle('theater-fullscreen', isTheater);
-      hudExitBtn.classList.toggle('hidden', !isTheater);
+      theaterHud.classList.toggle('hidden', !isTheater);
+      if (isTheater) {
+        showTheaterHud();
+      }
       const topbar = $('#topbar');
       if (topbar) topbar.style.display = isTheater ? 'none' : '';
 
@@ -405,11 +612,10 @@ export default {
 
       setTimeout(resizeCanvas, 60);
       sfx('whoosh');
-      toast(isTheater ? 'Theater Mode Active (Press T or Esc to exit)' : 'Exited Theater Mode', 'info');
+      toast(isTheater ? 'Theater Mode Active (Shortcut: Esc or T)' : 'Exited Theater Mode', 'info');
     }
 
     theaterBtn?.addEventListener('click', () => toggleTheater());
-    hudExitBtn?.addEventListener('click', () => toggleTheater(false));
 
     // Ghost / Zen Mode Toggle
     ghostBtn?.addEventListener('click', () => {
@@ -428,10 +634,12 @@ export default {
         return;
       }
 
+      activeVideoId = id;
       if (ytPlayer && ytPlayer.loadVideoById) {
         ytPlayer.loadVideoById(id);
       }
       updateDownloadLinks(id);
+      loadComments(id);
 
       currentTitle.textContent = `Video ${id}`;
       if (party.isHost) {
@@ -492,6 +700,7 @@ export default {
         tab.classList.add('active');
         const target = tab.dataset.tubeTab;
         $('#tabContentChat').classList.toggle('hidden', target !== 'chat');
+        $('#tabContentComments').classList.toggle('hidden', target !== 'comments');
         $('#tabContentQueue').classList.toggle('hidden', target !== 'queue');
         $('#tabContentParty').classList.toggle('hidden', target !== 'party');
         sfx('tick');
@@ -513,30 +722,42 @@ export default {
       const el = document.createElement('div');
       el.className = 'tube-chat-msg';
       el.innerHTML = `
-        <span class="chat-badge" style="background:${msg.color};color:#fff;">${msg.user.slice(0, 1)}</span>
+        <span class="chat-badge" style="background:${msg.color};color:#fff;">${esc(msg.user.slice(0, 1))}</span>
         <div class="stack" style="gap:1px;min-width:0;">
           <div class="row between xs mono faint">
-            <strong style="color:var(--ink);">${msg.user}</strong>
+            <strong style="color:var(--ink);">${esc(msg.user)}</strong>
             <span>${new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
-          <p class="text-xs text-paper-ink" style="word-break:break-word;">${escapeHtml(msg.text)}</p>
+          <p class="text-xs text-paper-ink" style="word-break:break-word;">${esc(msg.text)}</p>
         </div>
       `;
       chatLog.appendChild(el);
       chatLog.scrollTop = chatLog.scrollHeight;
 
-      // Floating chat overlay (for theater/zen view)
-      if (floatingChat && (isTheater || floatingChatOnly)) {
+      // Floating Discord Voice Overlay style side notification
+      if (floatingChat && showFloatingChat && (isTheater || floatingChatOnly)) {
         const floatEl = document.createElement('div');
-        floatEl.className = 'floating-chat-bubble pop-in';
-        floatEl.innerHTML = `<strong style="color:${msg.color};">${msg.user}:</strong> ${escapeHtml(msg.text)}`;
+        floatEl.className = 'floating-chat-bubble';
+        floatEl.style.setProperty('--bubble-color', msg.color || '#FF3B14');
+        floatEl.innerHTML = `
+          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${msg.color || '#FF3B14'};margin-top:4px;"></span>
+          <div style="min-width:0;">
+            <strong style="color:#FFFFFF;margin-right:4px;">${esc(msg.user)}:</strong>
+            <span style="color:#E2E8F0;">${esc(msg.text)}</span>
+          </div>
+        `;
         floatingChat.appendChild(floatEl);
-        setTimeout(() => floatEl.remove(), 4200);
-      }
-    }
 
-    function escapeHtml(str) {
-      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        // Keep maximum 4 active bubbles so video is never obstructed
+        while (floatingChat.children.length > 4) {
+          floatingChat.firstElementChild.remove();
+        }
+
+        setTimeout(() => {
+          floatEl.classList.add('fading-out');
+          setTimeout(() => floatEl.remove(), 280);
+        }, 4200);
+      }
     }
 
     // Party Event Wiring
@@ -588,9 +809,10 @@ export default {
         currentTitle.textContent = sync.title || `Video ${sync.videoId}`;
         currentAuthor.textContent = sync.author || 'YouTube';
         updateDownloadLinks(sync.videoId);
+        loadComments(sync.videoId);
       }
 
-      // Check time drift (if drift > 2 seconds, gently seek)
+      // Check time drift (if drift > 2.5 seconds, gently resync)
       const curTime = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
       const drift = Math.abs(curTime - sync.time);
 
@@ -625,9 +847,9 @@ export default {
         <div class="tile row between items-center p-2" style="border-left:3px solid ${m.color};">
           <div class="row items-center" style="gap:6px;">
             <span class="w-2.5 h-2.5 rounded-full" style="background:${m.color};"></span>
-            <span class="mono font-semibold text-xs text-paper-ink">${m.name}</span>
+            <span class="mono font-semibold text-xs text-paper-ink">${esc(m.name)}</span>
             ${m.isMe ? '<span class="badge" style="font-size:8.5px;">You</span>' : ''}
-            ${m.isHost ? '<span class="badge" style="background:var(--accent);color:#fff;font-size:8.5px;">Host 👑</span>' : ''}
+            ${m.isHost ? '<span class="badge" style="background:var(--accent);color:#fff;font-size:8.5px;">Host</span>' : ''}
           </div>
           ${party.isHost && !m.isMe ? `
             <div class="row" style="gap:4px;">
@@ -656,6 +878,463 @@ export default {
       sfx('success');
       toast(`Party Room ${info.code} Connected!`, 'ok');
     });
+
+    // ---------------- COMMENTS SYSTEM & SYNC-SCROLL ----------------
+    function getFallbackComments(vid) {
+      return [
+        {
+          id: 'c_fb_1',
+          author: 'AuraSync',
+          avatar: 'A',
+          color: '#38BDF8',
+          time: '2 hours ago',
+          text: '0:42 Bro cooked with this one, can not lie 🔥',
+          likes: 342,
+          isSynced: false,
+          reactions: { laugh: 14, cringe: 1, fire: 42, ratio: 0 }
+        },
+        {
+          id: 'c_fb_2',
+          author: 'PixelDrifter',
+          avatar: 'P',
+          color: '#F472B6',
+          time: '5 hours ago',
+          text: 'My synced squad in 5Tube judging comments right now: based as always',
+          likes: 189,
+          isSynced: false,
+          reactions: { laugh: 29, cringe: 0, fire: 18, ratio: 2 }
+        },
+        {
+          id: 'c_fb_3',
+          author: 'NeoNomad',
+          avatar: 'N',
+          color: '#10B981',
+          time: '1 day ago',
+          text: 'Bro who is in 2026 still listening to this masterpiece? Absolute vibes.',
+          likes: 512,
+          isSynced: false,
+          reactions: { laugh: 8, cringe: 2, fire: 67, ratio: 1 }
+        },
+        {
+          id: 'c_fb_4',
+          author: 'CyberPhantom',
+          avatar: 'C',
+          color: '#FF9F1C',
+          time: '1 day ago',
+          text: 'The editor deserves an immediate raise honestly.',
+          likes: 95,
+          isSynced: false,
+          reactions: { laugh: 12, cringe: 0, fire: 23, ratio: 0 }
+        },
+        {
+          id: 'c_fb_5',
+          author: 'SynthValkyrie',
+          avatar: 'S',
+          color: '#A78BFA',
+          time: '2 days ago',
+          text: 'Whoever queued this in the party has immaculate music taste.',
+          likes: 274,
+          isSynced: false,
+          reactions: { laugh: 5, cringe: 0, fire: 51, ratio: 0 }
+        },
+        {
+          id: 'c_fb_6',
+          author: 'ZeroLagGamer',
+          avatar: 'Z',
+          color: '#FF3B14',
+          time: '3 days ago',
+          text: 'bro really synced this with the entire squad 💀',
+          likes: 418,
+          isSynced: false,
+          reactions: { laugh: 78, cringe: 4, fire: 39, ratio: 5 }
+        },
+        {
+          id: 'c_fb_7',
+          author: 'EchoChamber',
+          avatar: 'E',
+          color: '#06D6A0',
+          time: '4 days ago',
+          text: 'Wait till 1:35 the drop is insane on theater mode.',
+          likes: 126,
+          isSynced: false,
+          reactions: { laugh: 3, cringe: 1, fire: 31, ratio: 0 }
+        },
+        {
+          id: 'c_fb_8',
+          author: 'MidnightRider',
+          avatar: 'M',
+          color: '#E76F51',
+          time: '5 days ago',
+          text: '10/10 no skips, peak synchronization.',
+          likes: 88,
+          isSynced: false,
+          reactions: { laugh: 4, cringe: 0, fire: 44, ratio: 0 }
+        }
+      ];
+    }
+
+    async function loadComments(vid) {
+      const container = $('#tubeCommentsList');
+      if (container) {
+        container.innerHTML = `<div class="text-center mono xs faint p-4">Loading comments for ${esc(vid)}...</div>`;
+      }
+
+      const apis = [
+        `https://inv.tux.pizza/api/v1/comments/${vid}`,
+        `https://invidious.nerdvpn.de/api/v1/comments/${vid}`,
+        `https://pipedapi.kavin.rocks/comments/${vid}`
+      ];
+
+      let fetched = null;
+      for (const url of apis) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(2800) });
+          if (res.ok) {
+            const data = await res.json();
+            const list = data.comments || (Array.isArray(data) ? data : []);
+            if (list && list.length > 0) {
+              fetched = list.slice(0, 30).map(c => ({
+                id: c.commentId || 'c_' + Math.random().toString(36).slice(2),
+                author: c.author || 'Viewer',
+                avatar: (c.author || 'V').slice(0, 1).toUpperCase(),
+                color: getRandomColor(),
+                time: c.publishedText || 'recently',
+                text: c.contentHtml ? c.contentHtml.replace(/<[^>]+>/g, '') : (c.content || ''),
+                likes: c.likeCount || 0,
+                isSynced: false,
+                reactions: { laugh: 0, cringe: 0, fire: 0, ratio: 0 }
+              }));
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+
+      currentComments = fetched || getFallbackComments(vid);
+      renderComments();
+    }
+
+    function renderComments() {
+      const container = $('#tubeCommentsList');
+      const countSpan = $('#tubeCommentsCount');
+      if (!container) return;
+
+      const allComments = [...syncedComments, ...currentComments];
+      if (countSpan) countSpan.textContent = allComments.length;
+
+      if (allComments.length === 0) {
+        container.innerHTML = `<div class="text-center mono xs faint p-4">No comments available.</div>`;
+        return;
+      }
+
+      container.innerHTML = allComments.map(c => `
+        <div class="comment-card ${c.isSynced ? 'is-synced' : ''}" data-comment-id="${c.id}">
+          <div class="comment-header">
+            <div class="comment-author-box">
+              <span class="comment-avatar" style="background:${c.color || '#FF3B14'};">${esc(c.avatar)}</span>
+              <span class="mono font-bold text-xs" style="color:var(--ink);">${esc(c.author)}</span>
+              ${c.isSynced ? `<span class="comment-synced-badge">${icon('zap')} SYNCED ONLY</span>` : ''}
+              ${c.flair ? `<span class="badge" style="font-size:8.5px;">${esc(c.flair)}</span>` : ''}
+            </div>
+            <span class="mono xs faint">${esc(c.time)}</span>
+          </div>
+
+          <p class="comment-text">${esc(c.text)}</p>
+
+          <div class="comment-reactions-bar">
+            <button type="button" class="reaction-btn ${c.myReaction === 'laugh' ? 'reacted' : ''}" data-rx="laugh" title="Laugh">
+              ${icon('laugh')} <span class="rx-count">${c.reactions.laugh || 0}</span>
+            </button>
+            <button type="button" class="reaction-btn ${c.myReaction === 'cringe' ? 'reacted' : ''}" data-rx="cringe" title="Cringe">
+              ${icon('cringe')} <span class="rx-count">${c.reactions.cringe || 0}</span>
+            </button>
+            <button type="button" class="reaction-btn ${c.myReaction === 'fire' ? 'reacted' : ''}" data-rx="fire" title="Based / Fire">
+              ${icon('fire')} <span class="rx-count">${c.reactions.fire || 0}</span>
+            </button>
+            <button type="button" class="reaction-btn ${c.myReaction === 'ratio' ? 'reacted' : ''}" data-rx="ratio" title="Ratio">
+              ${icon('ratio')} <span class="rx-count">${c.reactions.ratio || 0}</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      // Wire reaction clicks
+      container.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const card = btn.closest('.comment-card');
+          const cid = card?.dataset.commentId;
+          const rx = btn.dataset.rx;
+          if (!cid || !rx) return;
+          party.sendCommentReaction(cid, rx);
+          sfx('tick');
+        });
+      });
+    }
+
+    // Post Synced Custom/Fake Comment
+    const syncedCommentForm = $('#tubeSyncedCommentForm');
+    const syncedCommentInput = $('#syncedCommentInput');
+    const personaSelect = $('#syncedCommentPersona');
+
+    syncedCommentForm?.addEventListener('submit', e => {
+      e.preventDefault();
+      const txt = syncedCommentInput.value.trim();
+      if (!txt) return;
+
+      const persona = personaSelect ? personaSelect.value : 'me';
+      let author = party.user.name;
+      let flair = 'Squad';
+      let color = party.user.color;
+
+      if (persona === 'troll') {
+        author = 'Anonymous Troll';
+        flair = 'Troll';
+        color = '#888888';
+      } else if (persona === 'critic') {
+        author = 'Verified Music Critic';
+        flair = 'Verified';
+        color = '#38BDF8';
+      } else if (persona === 'timetraveler') {
+        author = 'Time Traveler (Year 2077)';
+        flair = 'Cyber';
+        color = '#06D6A0';
+      } else if (persona === 'ceo') {
+        author = 'YouTube CEO';
+        flair = 'Official';
+        color = '#FF3B14';
+      } else if (persona === 'mrbeast') {
+        author = 'MrBeast';
+        flair = 'Creator';
+        color = '#10B981';
+      }
+
+      const newComment = {
+        id: 'sync_' + Math.random().toString(36).slice(2, 9),
+        author,
+        avatar: author.slice(0, 1).toUpperCase(),
+        color,
+        flair,
+        time: 'just now',
+        text: txt,
+        likes: 1,
+        isSynced: true,
+        reactions: { laugh: 0, cringe: 0, fire: 0, ratio: 0 }
+      };
+
+      party.sendPartyComment(newComment);
+      syncedCommentInput.value = '';
+      sfx('success');
+      toast('Synced comment posted to party!', 'ok');
+    });
+
+    party.on('party-comment', data => {
+      if (!data.comment) return;
+      if (!syncedComments.some(c => c.id === data.comment.id)) {
+        syncedComments.unshift(data.comment);
+        renderComments();
+        sfx('pop');
+      }
+    });
+
+    party.on('comment-reaction', data => {
+      const allComments = [...syncedComments, ...currentComments];
+      const target = allComments.find(c => c.id === data.commentId);
+      if (target) {
+        target.reactions[data.reaction] = (target.reactions[data.reaction] || 0) + 1;
+        if (data.user === party.user.name) {
+          target.myReaction = data.reaction;
+        }
+        const card = $(`[data-comment-id="${data.commentId}"]`);
+        if (card) {
+          const rxBtn = card.querySelector(`[data-rx="${data.reaction}"]`);
+          if (rxBtn) {
+            const countSpan = rxBtn.querySelector('.rx-count');
+            if (countSpan) countSpan.textContent = target.reactions[data.reaction];
+            if (data.user === party.user.name) rxBtn.classList.add('reacted');
+            rxBtn.classList.remove('bounce');
+            void rxBtn.offsetWidth;
+            rxBtn.classList.add('bounce');
+          }
+        }
+      }
+    });
+
+    // Sync-Scroll Wireup
+    const commentsList = $('#tubeCommentsList');
+    const syncScrollBtn = $('#toggleSyncScrollBtn');
+    const syncScrollText = $('#syncScrollText');
+
+    syncScrollBtn?.addEventListener('click', () => {
+      isSyncScrollActive = !isSyncScrollActive;
+      syncScrollBtn.classList.toggle('active', isSyncScrollActive);
+      syncScrollText.textContent = isSyncScrollActive ? 'Sync-Scroll: ON' : 'Sync-Scroll: OFF';
+      toast(isSyncScrollActive ? 'Synced scrolling enabled' : 'Independent solo scrolling', 'info');
+      sfx('tick');
+    });
+
+    $('#refreshCommentsBtn')?.addEventListener('click', () => {
+      loadComments(activeVideoId);
+      sfx('tick');
+    });
+
+    commentsList?.addEventListener('scroll', () => {
+      if (!isSyncScrollActive || isRemotelyScrolling) return;
+      const maxScroll = commentsList.scrollHeight - commentsList.clientHeight;
+      if (maxScroll <= 0) return;
+      const ratio = commentsList.scrollTop / maxScroll;
+
+      if (scrollBroadcastTimer) clearTimeout(scrollBroadcastTimer);
+      scrollBroadcastTimer = setTimeout(() => {
+        party.sendCommentScroll(ratio);
+      }, 45);
+    }, { passive: true });
+
+    party.on('comment-scroll', data => {
+      if (!isSyncScrollActive || !commentsList) return;
+      const maxScroll = commentsList.scrollHeight - commentsList.clientHeight;
+      if (maxScroll <= 0) return;
+
+      isRemotelyScrolling = true;
+      commentsList.scrollTo({
+        top: data.ratio * maxScroll,
+        behavior: 'smooth'
+      });
+
+      const notice = $('#syncScrollUserNotice');
+      if (notice) {
+        notice.textContent = `Scrolled by ${esc(data.user)}`;
+        notice.classList.remove('hidden');
+        clearTimeout(notice._t);
+        notice._t = setTimeout(() => notice.classList.add('hidden'), 1800);
+      }
+
+      setTimeout(() => {
+        isRemotelyScrolling = false;
+      }, 250);
+    });
+
+    // ---------------- SYNCED DOOMSCROLL MODE ----------------
+    const doomOverlay = $('#fivetubeDoomscrollOverlay');
+    const doomCounter = $('#doomscrollCounterBadge');
+    const doomAuthor = $('#doomscrollAuthor');
+    const doomTitle = $('#doomscrollTitle');
+    const doomPrevBtn = $('#doomPrevBtn');
+    const doomNextBtn = $('#doomNextBtn');
+    const exitDoomBtn = $('#exitDoomscrollBtn');
+    const doomToggleBtn = $('#doomscrollToggleBtn');
+    const doomReactionsContainer = $('#doomscrollReactionsContainer');
+
+    function loadDoomClip(idx, broadcast = true) {
+      if (idx < 0) idx = DOOMSCROLL_FEED.length - 1;
+      if (idx >= DOOMSCROLL_FEED.length) idx = 0;
+      doomIndex = idx;
+      const clip = DOOMSCROLL_FEED[doomIndex];
+
+      if (doomCounter) doomCounter.textContent = `${doomIndex + 1} / ${DOOMSCROLL_FEED.length}`;
+      if (doomAuthor) doomAuthor.textContent = clip.author;
+      if (doomTitle) doomTitle.textContent = clip.title;
+
+      const mount = $('#doomscrollPlayerMount');
+      if (mount) {
+        mount.innerHTML = `<iframe id="doomYtIframe" src="https://www.youtube.com/embed/${clip.id}?autoplay=1&controls=1&modestbranding=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen style="width:100%;height:100%;border:none;"></iframe>`;
+      }
+
+      sfx('whoosh');
+
+      if (broadcast) {
+        party.sendDoomscrollSeek(doomIndex, clip.id, clip.title);
+      }
+    }
+
+    function spawnDoomReaction(reactionType) {
+      if (!doomReactionsContainer) return;
+      const el = document.createElement('div');
+      el.className = 'floating-reaction-particle';
+      const colors = { fire: '#FF3B14', laugh: '#FFD166', cringe: '#A78BFA', heart: '#F472B6' };
+      el.style.color = colors[reactionType] || '#FF3B14';
+      el.style.right = `${18 + Math.random() * 24}px`;
+      el.innerHTML = icon(reactionType);
+      doomReactionsContainer.appendChild(el);
+      setTimeout(() => el.remove(), 1800);
+    }
+
+    doomToggleBtn?.addEventListener('click', () => {
+      isDoomscroll = true;
+      document.body.classList.add('doomscroll-active');
+      doomOverlay.classList.remove('hidden');
+      try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (e) {}
+      loadDoomClip(0, party.isHost);
+      sfx('open');
+      toast('Entered Synced Doomscroll Mode! Swipe or use Up/Down keys.', 'ok');
+    });
+
+    exitDoomBtn?.addEventListener('click', () => {
+      isDoomscroll = false;
+      document.body.classList.remove('doomscroll-active');
+      doomOverlay.classList.add('hidden');
+      const mount = $('#doomscrollPlayerMount');
+      if (mount) mount.innerHTML = '';
+      sfx('close');
+    });
+
+    doomPrevBtn?.addEventListener('click', () => loadDoomClip(doomIndex - 1, true));
+    doomNextBtn?.addEventListener('click', () => loadDoomClip(doomIndex + 1, true));
+
+    $$('[data-doom-rx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rx = btn.dataset.doomRx;
+        party.sendDoomscrollReaction(rx);
+        sfx('tick');
+      });
+    });
+
+    party.on('doomscroll-reaction', data => {
+      spawnDoomReaction(data.reaction);
+      sfx('pop');
+    });
+
+    party.on('doomscroll-seek', data => {
+      if (data.index !== undefined && data.index !== doomIndex) {
+        if (!isDoomscroll) {
+          isDoomscroll = true;
+          doomOverlay.classList.remove('hidden');
+          try { if (ytPlayer && ytPlayer.pauseVideo) ytPlayer.pauseVideo(); } catch (e) {}
+        }
+        loadDoomClip(data.index, false);
+        toast(`${esc(data.user)} scrolled to clip ${data.index + 1}`, 'info');
+      }
+    });
+
+    // Touch Swipe Gestures for Mobile Doomscroll
+    let touchStartY = 0;
+    doomOverlay?.addEventListener('touchstart', e => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        touchStartY = e.changedTouches[0].clientY;
+      }
+    }, { passive: true });
+
+    doomOverlay?.addEventListener('touchend', e => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        const diffY = touchStartY - e.changedTouches[0].clientY;
+        if (Math.abs(diffY) > 50) {
+          if (diffY > 0) loadDoomClip(doomIndex + 1, true); // Swiped UP
+          else loadDoomClip(doomIndex - 1, true); // Swiped DOWN
+        }
+      }
+    }, { passive: true });
+
+    // Wheel Scroll for Desktop Doomscroll
+    let wheelThrottle = 0;
+    doomOverlay?.addEventListener('wheel', e => {
+      const now = Date.now();
+      if (now - wheelThrottle < 600) return;
+      if (Math.abs(e.deltaY) > 40) {
+        wheelThrottle = now;
+        if (e.deltaY > 0) loadDoomClip(doomIndex + 1, true);
+        else loadDoomClip(doomIndex - 1, true);
+      }
+    }, { passive: true });
 
     // Party Creation & Joining UI
     $('#createPartyBtn')?.addEventListener('click', async () => {
@@ -695,6 +1374,24 @@ export default {
       party.setColor(e.target.value);
     });
 
+    $('#toggleCursorsCheck')?.addEventListener('change', e => {
+      showCursors = e.target.checked;
+      hudCursorBtn?.classList.toggle('is-muted', !showCursors);
+      if (hudCursorIcon) hudCursorIcon.innerHTML = showCursors ? icon('cursor') : icon('cursorOff');
+      if (!showCursors && ctx && cursorCanvas) ctx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+    });
+
+    $('#toggleClicksCheck')?.addEventListener('change', e => {
+      showClicks = e.target.checked;
+    });
+
+    $('#toggleFloatingChatCheck')?.addEventListener('change', e => {
+      showFloatingChat = e.target.checked;
+      hudChatBtn?.classList.toggle('is-muted', !showFloatingChat);
+      if (hudChatIcon) hudChatIcon.innerHTML = showFloatingChat ? icon('chat') : icon('chatOff');
+      if (floatingChat) floatingChat.classList.toggle('hidden', !showFloatingChat);
+    });
+
     // Download Video Modal
     const dlModal = $('#downloadVideoModal');
     $('#downloadModalBtn')?.addEventListener('click', () => {
@@ -713,22 +1410,32 @@ export default {
     });
 
     // Mouse Tracking over Stage
+    let theaterBoxRect = null;
+    function updateTheaterBoxRect() {
+      if (theaterBox) theaterBoxRect = theaterBox.getBoundingClientRect();
+    }
+    window.addEventListener('resize', updateTheaterBoxRect, { passive: true });
+    window.addEventListener('scroll', updateTheaterBoxRect, { passive: true });
+    theaterBox?.addEventListener('pointerenter', updateTheaterBoxRect, { passive: true });
+
     theaterBox?.addEventListener('mousemove', e => {
-      const rect = theaterBox.getBoundingClientRect();
-      const normX = (e.clientX - rect.left) / rect.width;
-      const normY = (e.clientY - rect.top) / rect.height;
+      if (!theaterBoxRect || theaterBoxRect.width === 0) updateTheaterBoxRect();
+      if (!theaterBoxRect) return;
+      const normX = (e.clientX - theaterBoxRect.left) / theaterBoxRect.width;
+      const normY = (e.clientY - theaterBoxRect.top) / theaterBoxRect.height;
 
       const now = Date.now();
       if (now - lastCursorBroadcast > 32) { // ~30Hz
         party.sendCursor(normX, normY);
         lastCursorBroadcast = now;
       }
-    });
+    }, { passive: true });
 
     theaterBox?.addEventListener('click', e => {
-      const rect = theaterBox.getBoundingClientRect();
-      const normX = (e.clientX - rect.left) / rect.width;
-      const normY = (e.clientY - rect.top) / rect.height;
+      if (!theaterBoxRect || theaterBoxRect.width === 0) updateTheaterBoxRect();
+      if (!theaterBoxRect) return;
+      const normX = (e.clientX - theaterBoxRect.left) / theaterBoxRect.width;
+      const normY = (e.clientY - theaterBoxRect.top) / theaterBoxRect.height;
 
       party.sendClick(normX, normY);
       clickRipples.push({
@@ -771,7 +1478,6 @@ export default {
       // Render Peer Cursors
       if (showCursors) {
         peerCursors.forEach((peer, id) => {
-          // Lerp position
           peer.x += (peer.targetX - peer.x) * 0.35;
           peer.y += (peer.targetY - peer.y) * 0.35;
 
@@ -829,15 +1535,36 @@ export default {
 
     // Keyboard Shortcuts
     function onKeyDown(e) {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+      if (isDoomscroll) {
+        if (e.key === 'ArrowDown' || e.key.toLowerCase() === 'j') {
+          e.preventDefault();
+          loadDoomClip(doomIndex + 1, true);
+        } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          loadDoomClip(doomIndex - 1, true);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          exitDoomBtn?.click();
+        }
+        return;
+      }
+
       if (e.key.toLowerCase() === 't') {
         e.preventDefault();
         toggleTheater();
       } else if (e.key === 'Escape' && isTheater) {
         toggleTheater(false);
+      } else if (e.key.toLowerCase() === 'c' && isTheater) {
+        e.preventDefault();
+        hudChatBtn?.click();
+      } else if (e.key.toLowerCase() === 'm' && isTheater) {
+        e.preventDefault();
+        hudCursorBtn?.click();
       } else if (e.key === ' ' && party.isHost) {
         e.preventDefault();
-        playPauseBtn.click();
+        playPauseBtn?.click();
       }
     }
     window.addEventListener('keydown', onKeyDown);
@@ -845,9 +1572,15 @@ export default {
     // Unmount & Cleanup
     return () => {
       if (animFrame) cancelAnimationFrame(animFrame);
+      if (hudIdleTimer) clearTimeout(hudIdleTimer);
+      if (scrollBroadcastTimer) clearTimeout(scrollBroadcastTimer);
       window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', updateTheaterBoxRect);
+      window.removeEventListener('scroll', updateTheaterBoxRect);
       window.removeEventListener('keydown', onKeyDown);
       document.body.classList.remove('theater-mode');
+      document.body.classList.remove('in-fivetube');
+      document.body.classList.remove('doomscroll-active');
       const topbar = $('#topbar');
       if (topbar) topbar.style.display = '';
       if (ytPlayer && ytPlayer.destroy) {
