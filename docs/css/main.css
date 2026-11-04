@@ -771,34 +771,150 @@ html.reduce-motion .reveal { opacity: 1; transform: none; }
   position: absolute;
   top: 50px;
   left: 14px;
-  max-width: 250px;
+  max-width: 290px;
+  width: calc(100% - 28px);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   pointer-events: none;
   z-index: 100005;
 }
 
 .floating-chat-bubble {
-  display: inline-flex;
-  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  background: rgba(12, 14, 18, 0.62);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 14, 18, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-left: 3px solid var(--bubble-color, #FF3B14);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 11px;
-  line-height: 1.35;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  line-height: 1.4;
   font-family: var(--font-mono);
   color: #F8FAFC;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
   animation: discordSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  pointer-events: none;
+  pointer-events: auto;
   max-width: 100%;
   word-break: break-word;
+  transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.floating-chat-bubble:hover,
+.floating-chat-bubble:focus-within {
+  background: rgba(12, 14, 18, 0.94);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.floating-chat-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  width: 100%;
+}
+
+.floating-chat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+  background: var(--bubble-color, #FF3B14);
+  box-shadow: 0 0 6px var(--bubble-color, #FF3B14);
+}
+
+.floating-chat-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.floating-chat-user {
+  color: #FFFFFF;
+  font-weight: 700;
+  margin-right: 5px;
+}
+
+.floating-chat-text {
+  color: #E2E8F0;
+}
+
+/* Micro Quick-Reply Form */
+.theater-quick-reply-form {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 2px 4px 2px 8px;
+  height: 27px;
+  width: 100%;
+  transition: all 0.18s ease;
+  pointer-events: auto;
+}
+
+.theater-quick-reply-form:focus-within {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--accent, #FF3B14);
+  box-shadow: 0 0 0 1px var(--accent, #FF3B14);
+}
+
+.theater-quick-reply-input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  color: #FFFFFF !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  line-height: normal !important;
+}
+
+.theater-quick-reply-input::placeholder {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10.5px;
+}
+
+.theater-quick-reply-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 4px;
+  border: none;
+  background: var(--accent, #FF3B14);
+  color: #FFFFFF;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.theater-quick-reply-btn:hover {
+  filter: brightness(1.15);
+  transform: scale(1.06);
+}
+
+.theater-quick-reply-btn:active {
+  transform: scale(0.95);
+}
+
+.theater-quick-reply-btn svg {
+  width: 11px !important;
+  height: 11px !important;
+  stroke-width: 2 !important;
+  pointer-events: none;
 }
 
 .floating-chat-bubble.fading-out {
@@ -1654,11 +1770,32 @@ body.in-fivetube #musicDock {
   .fivetube-floating-chat {
     top: 48px;
     left: 8px;
-    max-width: 200px;
+    max-width: 240px;
+    width: calc(100% - 16px);
   }
   .floating-chat-bubble {
     font-size: 10.5px;
-    padding: 3px 7px;
+    padding: 6px 8px;
+    gap: 5px;
+  }
+  .theater-quick-reply-form {
+    height: 25px;
+    padding: 2px 4px 2px 6px;
+  }
+  .theater-quick-reply-input {
+    font-size: 10px !important;
+  }
+  .theater-quick-reply-input::placeholder {
+    font-size: 9.5px;
+  }
+  .theater-quick-reply-btn {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+  }
+  .theater-quick-reply-btn svg {
+    width: 10px !important;
+    height: 10px !important;
   }
   .doomscroll-stage-wrap {
     max-width: 100vw;

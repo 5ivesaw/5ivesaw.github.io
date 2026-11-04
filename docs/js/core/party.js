@@ -449,7 +449,7 @@ export class PartySession {
   }
 
   sendChat(text) {
-    if (!this.code || !text.trim()) return;
+    if (!text || !text.trim()) return;
     const msg = {
       type: 'chat',
       id: Math.random().toString(36).slice(2),
@@ -458,7 +458,9 @@ export class PartySession {
       text: text.trim(),
       time: Date.now()
     };
-    this.broadcast(msg);
+    if (this.code) {
+      this.broadcast(msg);
+    }
     // Also emit locally
     this.emit('chat', msg);
   }

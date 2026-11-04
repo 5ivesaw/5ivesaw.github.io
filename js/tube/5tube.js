@@ -1513,29 +1513,107 @@ export default {
       chatLog.appendChild(el);
       chatLog.scrollTop = chatLog.scrollHeight;
 
-      // Floating Discord Voice Overlay style side notification
+      // Floating Discord Voice Overlay style side notification with micro quick-reply
       if (floatingChat && showFloatingChat && (isTheater || floatingChatOnly)) {
+        const isSelf = (party?.user?.name && msg.user === party.user.name);
         const floatEl = document.createElement('div');
         floatEl.className = 'floating-chat-bubble';
         floatEl.style.setProperty('--bubble-color', msg.color || '#FF3B14');
+        const replyPlaceholder = isSelf ? 'Reply...' : `Reply to ${esc(msg.user)}...`;
+
         floatEl.innerHTML = `
-          <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${msg.color || '#FF3B14'};margin-top:4px;"></span>
-          <div style="min-width:0;">
-            <strong style="color:#FFFFFF;margin-right:4px;">${esc(msg.user)}:</strong>
-            <span style="color:#E2E8F0;">${esc(msg.text)}</span>
+          <div class="floating-chat-header">
+            <span class="floating-chat-dot" style="background:${msg.color || '#FF3B14'};"></span>
+            <div class="floating-chat-body">
+              <strong class="floating-chat-user">${esc(msg.user)}:</strong>
+              <span class="floating-chat-text">${esc(msg.text)}</span>
+            </div>
           </div>
+          <form class="theater-quick-reply-form" autocomplete="off">
+            <input type="text" class="theater-quick-reply-input" placeholder="${replyPlaceholder}" maxlength="250" autocomplete="off" spellcheck="false" />
+            <button type="submit" class="theater-quick-reply-btn" title="Send reply" aria-label="Send reply">
+              ${icon('send', 'theater-quick-reply-icon')}
+            </button>
+          </form>
         `;
         floatingChat.appendChild(floatEl);
 
-        // Keep maximum 4 active bubbles so video is never obstructed
-        while (floatingChat.children.length > 4) {
+        // Keep maximum 3 active bubbles so stage remains clear
+        while (floatingChat.children.length > 3) {
           floatingChat.firstElementChild.remove();
         }
 
-        setTimeout(() => {
+        const replyForm = floatEl.querySelector('.theater-quick-reply-form');
+        const replyInput = floatEl.querySelector('.theater-quick-reply-input');
+        let dismissTimer = null;
+        let isFocused = false;
+
+        const scheduleDismiss = (ms = 5500) => {
+          clearTimeout(dismissTimer);
+          dismissTimer = setTimeout(() => {
+            if (!isFocused && !replyInput?.value?.trim()) {
+              dismissBubble();
+            }
+          }, ms);
+        };
+
+        const dismissBubble = () => {
+          clearTimeout(dismissTimer);
           floatEl.classList.add('fading-out');
-          setTimeout(() => floatEl.remove(), 280);
-        }, 4200);
+          setTimeout(() => {
+            try { floatEl.remove(); } catch (e) {}
+          }, 260);
+        };
+
+        if (replyInput) {
+          replyInput.addEventListener('focus', () => {
+            isFocused = true;
+            clearTimeout(dismissTimer);
+          });
+
+          replyInput.addEventListener('blur', () => {
+            isFocused = false;
+            if (!replyInput.value.trim()) {
+              scheduleDismiss(2800);
+            }
+          });
+
+          replyInput.addEventListener('input', () => {
+            clearTimeout(dismissTimer);
+          });
+
+          replyInput.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Escape') {
+              replyInput.blur();
+              dismissBubble();
+            }
+          });
+        }
+
+        floatEl.addEventListener('mouseenter', () => {
+          clearTimeout(dismissTimer);
+        });
+
+        floatEl.addEventListener('mouseleave', () => {
+          if (!isFocused && !replyInput?.value?.trim()) {
+            scheduleDismiss(3500);
+          }
+        });
+
+        if (replyForm) {
+          replyForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const text = replyInput ? replyInput.value.trim() : '';
+            if (!text) return;
+            party.sendChat(text);
+            sfx('tick');
+            dismissBubble();
+          });
+        }
+
+        scheduleDismiss(5500);
       }
     }
 
@@ -2520,6 +2598,16 @@ export default {
           const comedyBtn = document.querySelector('[data-niche-key="comedy"]');
           if (comedyBtn) comedyBtn.click();
           else selectAndLaunchNiche(SHORTS_NICHES.comedy.name, '', SHORTS_NICHES.comedy.items);
+        } else if (testAction === 'theater_reply') {
+          toggleTheater(true);
+          setTimeout(() => {
+            appendChatMessage({
+              user: 'Nova',
+              color: '#3B82F6',
+              text: 'Check this bass drop right here!',
+              time: Date.now()
+            });
+          }, 250);
         }
       }, 350);
     }
