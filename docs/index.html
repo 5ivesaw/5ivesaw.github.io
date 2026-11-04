@@ -817,12 +817,15 @@
       </div>
 
       <!-- Right Volume & Queue Toggle -->
-      <div class="row" style="gap:8px;flex:1 1 210px;justify-content:flex-end;">
-        <button type="button" id="dockLiveAudioBtn" class="btn sm ghost" title="Enable Live Hardware Audio / Mic Spectrum" style="padding:0 8px;height:28px;font-size:11px;font-family:var(--font-mono);gap:4px;">
-          <span data-icon="mic"></span> <span class="hidden sm:inline">Live Audio</span>
+      <div class="row items-center" style="gap:6px;flex:1 1 240px;justify-content:flex-end;">
+        <button type="button" id="dockTabAudioBtn" class="btn sm ghost" title="Capture Direct Tab Audio Loopback (Lossless, Works with Headphones & IEMs)" style="padding:0 8px;height:28px;font-size:11px;font-family:var(--font-mono);gap:4px;">
+          <span data-icon="monitor"></span> <span class="hidden sm:inline">Tab Audio</span>
+        </button>
+        <button type="button" id="dockLiveAudioBtn" class="btn sm ghost" title="Select Audio Input Source (Mic / PipeWire / Stereo Mix)" style="padding:0 8px;height:28px;font-size:11px;font-family:var(--font-mono);gap:4px;">
+          <span data-icon="mic"></span> <span class="hidden sm:inline">Input</span>
         </button>
         <button type="button" id="dockMuteBtn" class="btn sm icon ghost" title="Mute"><span data-icon="vol"></span></button>
-        <input type="range" id="dockVolSlider" min="0" max="100" value="45" style="max-width:80px;" title="Volume" />
+        <input type="range" id="dockVolSlider" min="0" max="100" value="45" style="max-width:70px;" title="Volume" />
         <button type="button" id="dockQueueToggle" class="btn sm icon ghost" title="Queue / Playlist"><span data-icon="list"></span></button>
       </div>
     </div>
@@ -927,6 +930,64 @@
       <div class="row between xs mono">
         <span class="faint">@5ivesaw YouTube Broadcast</span>
         <a id="videoModalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="accent hover:underline">Watch on YouTube ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIO INPUT SOURCE SELECTOR MODAL -->
+  <div id="audioSourceModal" class="modal" role="dialog" aria-modal="true">
+    <div class="card pad" style="max-width:500px;width:100%;padding:18px;">
+      <div class="row between items-center border-b border-[var(--line)] pb-3">
+        <div class="row items-center" style="gap:8px;">
+          <span class="badge" style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;">REAL-TIME FFT</span>
+          <h3 class="font-bold text-base mono text-paper-ink">Audio Visualizer Input Source</h3>
+        </div>
+        <button type="button" id="closeAudioSourceModalBtn" class="btn sm ghost" style="padding:2px 8px;">✕</button>
+      </div>
+      <p class="xs muted my-3">Pipe raw digital audio straight into 3D reactors, Chladni plates, and warp tunnels without voice filter distortion:</p>
+
+      <div class="stack" style="gap:10px;">
+        <!-- Mode 1: Browser Tab Audio Loopback -->
+        <div class="tile p-3 stack" style="gap:6px;border-left:3px solid #10B981;">
+          <div class="row between items-center">
+            <div class="row items-center" style="gap:6px;">
+              <span class="font-bold text-sm text-paper-ink">Browser Tab Audio Loopback</span>
+              <span class="badge" style="background:#10B981;color:#fff;font-size:9px;">Lossless</span>
+            </div>
+            <button type="button" id="connectTabAudioBtn" class="btn sm primary" style="height:26px;font-size:11px;">
+              Capture Tab
+            </button>
+          </div>
+          <p class="xs muted" style="margin:0;">Captures raw digital audio straight from the browser tab playing music. Zero room noise, 100% frequency response, works with headphones and IEMs.</p>
+        </div>
+
+        <!-- Mode 2: OS System Audio Monitor / Mic Input -->
+        <div class="tile p-3 stack" style="gap:8px;border-left:3px solid var(--accent);">
+          <div class="row between items-center">
+            <div class="row items-center" style="gap:6px;">
+              <span class="font-bold text-sm text-paper-ink">Hardware / OS System Monitor</span>
+              <span class="badge" style="font-size:9px;">DSP Off</span>
+            </div>
+            <button type="button" id="connectDeviceAudioBtn" class="btn sm ghost" style="height:26px;font-size:11px;border-color:var(--accent);color:var(--accent);">
+              Connect Input
+            </button>
+          </div>
+          <p class="xs muted" style="margin:0;">Direct device capture with browser noise suppression and echo cancellation disabled. Select your OS system loopback (e.g. PipeWire Monitor, Stereo Mix, or Mic):</p>
+          <select id="audioDeviceSelect" class="input xs font-mono" style="width:100%;height:30px;font-size:11px;">
+            <option value="">Default Audio Input</option>
+          </select>
+        </div>
+
+        <!-- Mode 3: Built-In Streaming Sync Engine -->
+        <div class="tile p-3 row between items-center">
+          <div class="stack" style="gap:2px;">
+            <span class="font-bold text-xs text-paper-ink">Internal Timecode Sync Engine</span>
+            <span class="xs muted">Built-in millisecond track energy mapper and rhythmic pulse synthesis.</span>
+          </div>
+          <button type="button" id="revertStreamingAudioBtn" class="btn sm ghost" style="height:26px;font-size:11px;">
+            Use Sync Engine
+          </button>
+        </div>
       </div>
     </div>
   </div>

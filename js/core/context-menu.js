@@ -67,9 +67,22 @@ export function initContextMenu() {
         sfx('click');
         break;
       case 'toggle-live-audio':
-        const activeLive = await music.toggleHardwareAudio();
-        toast(activeLive ? '🎤 Live Hardware Audio Connected!' : 'Switched to Streaming Audio Sync', 'ok');
-        sfx('toggleOn');
+        const audioModal = $('#audioSourceModal');
+        if (audioModal) {
+          audioModal.classList.remove('hidden');
+          audioModal.classList.add('open');
+          const devSelect = $('#audioDeviceSelect');
+          if (devSelect) {
+            const devs = await music.getAudioInputDevices();
+            devSelect.innerHTML = '<option value="">Default Audio Input</option>' +
+              devs.map(d => `<option value="${d.deviceId}">${d.label || 'Input Device'}</option>`).join('');
+          }
+          sfx('open');
+        } else {
+          const activeLive = await music.toggleHardwareAudio();
+          toast(activeLive ? 'Live Audio Connected' : 'Switched to Streaming Audio Sync', 'ok');
+          sfx('toggleOn');
+        }
         break;
       case 'open-cmd':
         $('#openCmdPaletteBtn')?.click();

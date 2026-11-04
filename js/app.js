@@ -1671,36 +1671,107 @@ function initMusicDock() {
     sfx('click');
   });
 
-  // Dock interactions
+  // Dock Audio Source Interactions (Tab Loopback, System Monitor, and Hardware Mic)
+  const tabAudioBtn = $('#dockTabAudioBtn');
   const liveAudioBtn = $('#dockLiveAudioBtn');
-  if (liveAudioBtn) {
-    liveAudioBtn.addEventListener('click', async () => {
-      const active = await music.toggleHardwareAudio();
-      liveAudioBtn.classList.toggle('primary', active);
-      if (active) {
-        liveAudioBtn.style.background = 'var(--accent)';
-        liveAudioBtn.style.color = '#fff';
-        toast('Live Hardware Audio Connected! Visualizers reading real audio frequencies.', 'ok');
-        sfx('toggleOn');
-      } else {
-        liveAudioBtn.style.background = '';
-        liveAudioBtn.style.color = '';
-        toast('Switched back to Streaming Audio Sync', 'ok');
-        sfx('toggleOff');
-      }
-    });
+  const audioSourceModal = $('#audioSourceModal');
+  const audioDeviceSelect = $('#audioDeviceSelect');
 
-    music.on('hardware-audio', active => {
-      liveAudioBtn.classList.toggle('primary', active);
-      if (active) {
-        liveAudioBtn.style.background = 'var(--accent)';
-        liveAudioBtn.style.color = '#fff';
-      } else {
-        liveAudioBtn.style.background = '';
-        liveAudioBtn.style.color = '';
-      }
-    });
+  async function populateAudioInputDevices() {
+    if (!audioDeviceSelect) return;
+    const devices = await music.getAudioInputDevices();
+    audioDeviceSelect.innerHTML = '<option value="">Default Audio Device</option>' +
+      devices.map(d => `<option value="${d.deviceId}">${esc(d.label || `Input Device (${d.deviceId.slice(0, 8)})`)}</option>`).join('');
   }
+
+  // 1. Direct Tab Audio Loopback Button (Zero Setup, Headphones Friendly)
+  tabAudioBtn?.addEventListener('click', async () => {
+    if (music.isHardwareLive && music.hardwareMode === 'tab') {
+      music.disableHardwareAudio();
+      sfx('toggleOff');
+      toast('Switched back to Streaming Audio Sync', 'info');
+    } else {
+      const ok = await music.enableTabAudioLoopback();
+      if (ok) {
+        sfx('toggleOn');
+        toast('Tab Audio Loopback Connected! Pure lossless FFT direct from player.', 'ok');
+      } else {
+        toast('Tab audio capture cancelled or no audio track shared.', 'info');
+      }
+    }
+  });
+
+  // 2. Open / Close Audio Source Modal
+  const openAudioModal = async () => {
+    if (!audioSourceModal) return;
+    audioSourceModal.classList.remove('hidden');
+    audioSourceModal.classList.add('open');
+    await populateAudioInputDevices();
+    sfx('open');
+  };
+
+  const closeAudioModal = () => {
+    if (!audioSourceModal) return;
+    audioSourceModal.classList.remove('open');
+    audioSourceModal.classList.add('hidden');
+    sfx('close');
+  };
+
+  liveAudioBtn?.addEventListener('click', openAudioModal);
+  $('#closeAudioSourceModalBtn')?.addEventListener('click', closeAudioModal);
+  audioSourceModal?.addEventListener('click', e => {
+    if (e.target === audioSourceModal) closeAudioModal();
+  });
+
+  $('#connectTabAudioBtn')?.addEventListener('click', async () => {
+    closeAudioModal();
+    const ok = await music.enableTabAudioLoopback();
+    if (ok) {
+      sfx('toggleOn');
+      toast('Tab Audio Loopback Connected! Lossless FFT straight to visualizers.', 'ok');
+    } else {
+      toast('Tab audio capture cancelled or no audio track shared.', 'info');
+    }
+  });
+
+  $('#connectDeviceAudioBtn')?.addEventListener('click', async () => {
+    closeAudioModal();
+    const devId = audioDeviceSelect?.value || null;
+    const ok = await music.enableHardwareAudio(devId);
+    if (ok) {
+      sfx('toggleOn');
+      toast(`System Audio Connected (${music.hardwareDeviceName})! Voice DSP disabled.`, 'ok');
+    } else {
+      toast('Hardware audio input permission not granted.', 'err');
+    }
+  });
+
+  $('#revertStreamingAudioBtn')?.addEventListener('click', () => {
+    closeAudioModal();
+    music.disableHardwareAudio();
+    sfx('toggleOff');
+    toast('Switched back to Built-In Streaming Sync Engine', 'info');
+  });
+
+  // Update button visual states
+  music.on('hardware-audio', info => {
+    const isLive = typeof info === 'object' ? info.active : !!info;
+    const mode = typeof info === 'object' ? info.mode : (isLive ? 'device' : 'none');
+
+    if (tabAudioBtn) {
+      tabAudioBtn.classList.toggle('primary', isLive && mode === 'tab');
+      tabAudioBtn.style.background = (isLive && mode === 'tab') ? '#10B981' : '';
+      tabAudioBtn.style.color = (isLive && mode === 'tab') ? '#fff' : '';
+      tabAudioBtn.style.borderColor = (isLive && mode === 'tab') ? '#10B981' : '';
+    }
+
+    if (liveAudioBtn) {
+      liveAudioBtn.classList.toggle('primary', isLive && mode === 'device');
+      liveAudioBtn.style.background = (isLive && mode === 'device') ? 'var(--accent)' : '';
+      liveAudioBtn.style.color = (isLive && mode === 'device') ? '#fff' : '';
+      liveAudioBtn.style.borderColor = (isLive && mode === 'device') ? 'var(--accent)' : '';
+    }
+  });
 
   playBtn.addEventListener('click', () => { music.toggle(); sfx('click'); });
   prevBtn.addEventListener('click', () => { music.prev(); sfx('click'); });

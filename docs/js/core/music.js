@@ -54,18 +54,110 @@ function setState(st) {
   }
 }
 
-// Hardware Real-Time Audio Capture (Literal 1024-bin FFT from device / mic)
+// Hardware & Internal Loopback Real-Time Audio Capture
+// Direct tab loopback (getDisplayMedia) + System Monitor / Mic (getUserMedia with voice DSP OFF)
 let hardwareAudio = {
   active: false,
   ctx: null,
   analyser: null,
   dataArray: null,
-  stream: null
+  stream: null,
+  mode: 'none', // 'tab' | 'device' | 'none'
+  deviceId: null,
+  deviceName: ''
 };
 
-export async function enableHardwareAudio() {
+export async function getAudioInputDevices() {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return [];
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter(d => d.kind === 'audioinput');
+  } catch (err) {
+    console.warn('enumerateDevices error:', err);
+    return [];
+  }
+}
+
+export async function enableTabAudioLoopback() {
+  disableHardwareAudio();
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      console.warn('getDisplayMedia not supported');
+      return false;
+    }
+
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { displaySurface: 'browser' },
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        suppressLocalAudioPlayback: false
+      },
+      preferCurrentTab: true,
+      selfBrowserSurface: 'include',
+      systemAudio: 'include'
+    });
+
+    const audioTracks = stream.getAudioTracks();
+    if (!audioTracks || audioTracks.length === 0) {
+      stream.getTracks().forEach(t => t.stop());
+      return false;
+    }
+
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.72;
+    source.connect(analyser);
+    // Crucial: do NOT connect to ctx.destination, otherwise audio plays twice!
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    hardwareAudio = {
+      active: true,
+      ctx,
+      analyser,
+      dataArray,
+      stream,
+      mode: 'tab',
+      deviceId: null,
+      deviceName: 'Tab Audio Loopback'
+    };
+
+    stream.getTracks().forEach(track => {
+      track.addEventListener('ended', () => {
+        if (hardwareAudio.mode === 'tab') {
+          disableHardwareAudio();
+        }
+      });
+    });
+
+    startPulseLoop();
+    emit('hardware-audio', { active: true, mode: 'tab', name: 'Tab Audio Loopback' });
+    return true;
+  } catch (err) {
+    console.warn('Tab audio loopback error:', err);
+    return false;
+  }
+}
+
+export async function enableHardwareAudio(deviceId = null) {
+  disableHardwareAudio();
+  try {
+    const constraints = {
+      audio: {
+        deviceId: deviceId ? { exact: deviceId } : undefined,
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false
+      },
+      video: false
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const source = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
@@ -76,9 +168,33 @@ export async function enableHardwareAudio() {
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
-    hardwareAudio = { active: true, ctx, analyser, dataArray, stream };
+    let deviceName = 'Hardware Input';
+    const audioTrack = stream.getAudioTracks()[0];
+    if (audioTrack && audioTrack.label) {
+      deviceName = audioTrack.label;
+    }
+
+    hardwareAudio = {
+      active: true,
+      ctx,
+      analyser,
+      dataArray,
+      stream,
+      mode: 'device',
+      deviceId,
+      deviceName
+    };
+
+    stream.getTracks().forEach(track => {
+      track.addEventListener('ended', () => {
+        if (hardwareAudio.mode === 'device') {
+          disableHardwareAudio();
+        }
+      });
+    });
+
     startPulseLoop();
-    emit('hardware-audio', true);
+    emit('hardware-audio', { active: true, mode: 'device', name: deviceName, deviceId });
     return true;
   } catch (err) {
     console.warn('Hardware audio capture unavailable:', err);
@@ -93,16 +209,22 @@ export function disableHardwareAudio() {
   if (hardwareAudio.ctx) {
     try { hardwareAudio.ctx.close(); } catch {}
   }
-  hardwareAudio = { active: false, ctx: null, analyser: null, dataArray: null, stream: null };
-  emit('hardware-audio', false);
+  hardwareAudio = { active: false, ctx: null, analyser: null, dataArray: null, stream: null, mode: 'none', deviceId: null, deviceName: '' };
+  emit('hardware-audio', { active: false, mode: 'none', name: '' });
 }
 
-export async function toggleHardwareAudio() {
+export async function toggleHardwareAudio(preferredMode = 'tab', deviceId = null) {
   if (hardwareAudio.active) {
     disableHardwareAudio();
     return false;
   } else {
-    return await enableHardwareAudio();
+    if (preferredMode === 'tab') {
+      const ok = await enableTabAudioLoopback();
+      if (!ok) return await enableHardwareAudio(deviceId);
+      return ok;
+    } else {
+      return await enableHardwareAudio(deviceId);
+    }
   }
 }
 
@@ -658,7 +780,11 @@ export const music = {
   upNext(n = 5) { const out = []; for (let i = 1; i <= n && i < S.order.length; i++) out.push(S.tracks[S.order[(S.pos + i) % S.order.length]]); return out; },
   get pulse() { return currentPulseData; },
   get isHardwareLive() { return hardwareAudio.active; },
+  get hardwareMode() { return hardwareAudio.mode; },
+  get hardwareDeviceName() { return hardwareAudio.deviceName; },
+  enableTabAudioLoopback,
   enableHardwareAudio,
   disableHardwareAudio,
   toggleHardwareAudio,
+  getAudioInputDevices,
 };
