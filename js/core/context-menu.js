@@ -38,7 +38,6 @@ export function initContextMenu() {
     menu.style.left = `${x}px`;
     menu.style.top = `${y}px`;
     menu.classList.remove('hidden');
-    sfx('open');
   });
 
   window.addEventListener('click', e => {

@@ -85,7 +85,7 @@ function applyTheme(tone, x, y) {
   sfx('toggleOn');
 }
 
-// Hero background particle canvas
+// Hero background particle canvas (Optimized: 0 style recalcs, pauses when offscreen or in subviews)
 function initHeroCanvas() {
   const canvas = $('#heroFieldCanvas');
   if (!canvas) return;
@@ -93,27 +93,41 @@ function initHeroCanvas() {
   let w = 0, h = 0;
   let mx = -1000, my = -1000;
   let phase = 0;
+  let cachedAccent = cssVar('--accent') || '#942929';
+  onThemeChange(() => { cachedAccent = cssVar('--accent') || '#942929'; });
 
   function resize() {
     w = canvas.width = canvas.parentElement.clientWidth;
     h = canvas.height = canvas.parentElement.clientHeight;
   }
   resize();
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', resize, { passive: true });
 
   canvas.parentElement.addEventListener('mousemove', e => {
-    const r = canvas.getBoundingClientRect();
-    mx = e.clientX - r.left;
-    my = e.clientY - r.top;
-  });
-  canvas.parentElement.addEventListener('mouseleave', () => { mx = -1000; my = -1000; });
+    mx = e.offsetX;
+    my = e.offsetY;
+  }, { passive: true });
+  canvas.parentElement.addEventListener('mouseleave', () => { mx = -1000; my = -1000; }, { passive: true });
+
+  const homeSections = $('#homeSections');
+  let isVisible = true;
+  const io = new IntersectionObserver(([entry]) => {
+    isVisible = entry.isIntersecting;
+  }, { threshold: 0.05 });
+  io.observe(canvas.parentElement);
 
   function draw() {
-    ctx.clearRect(0, 0, w, h);
-    const accent = cssVar('--accent') || '#942929';
-    ctx.fillStyle = accent;
+    if (!isVisible || document.hidden || (homeSections && homeSections.classList.contains('hidden'))) {
+      requestAnimationFrame(draw);
+      return;
+    }
 
-    const spacing = 28;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = cachedAccent;
+
+    // Use larger spacing on small screens to save battery & GPU
+    const isMobile = w < 640;
+    const spacing = isMobile ? 44 : 30;
     phase += 0.024 * state.csmBoost;
 
     const pulse = music.pulse || { isPlaying: false, kick: 0, energy: 0 };
@@ -124,7 +138,7 @@ function initHeroCanvas() {
       for (let y = spacing; y < h; y += spacing) {
         const dx = x - mx;
         const dy = y - my;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const dist = Math.hypot(dx, dy);
         const wave = (Math.sin(x * 0.022 + y * 0.022 + phase) * (2.2 * state.csmBoost)) + (musicKick * Math.sin((x + y) * 0.03 - phase * 2) * 4);
         let pushX = 0, pushY = 0;
         let radius = 1.2 + (musicKick * 0.9);
@@ -1953,6 +1967,67 @@ async function initApp() {
   $('#socialsMenuBtn')?.addEventListener('click', openSocials);
   $('#heroOpenSocialsBtn')?.addEventListener('click', openSocials);
   $('#closeSocialsLauncherBtn')?.addEventListener('click', closeSocials);
+
+  // Dedicated Mobile Navigation Drawer & Bottom Tabs
+  const mobileDrawer = $('#mobileDrawerModal');
+  const openMobileDrawer = () => {
+    if (!mobileDrawer) return;
+    mobileDrawer.classList.remove('hidden');
+    mobileDrawer.classList.add('open');
+    sfx('open');
+  };
+  const closeMobileDrawer = () => {
+    if (!mobileDrawer) return;
+    mobileDrawer.classList.remove('open');
+    mobileDrawer.classList.add('hidden');
+    sfx('close');
+  };
+
+  $('#mobileMenuBtn')?.addEventListener('click', openMobileDrawer);
+  $('#closeMobileDrawerBtn')?.addEventListener('click', closeMobileDrawer);
+  mobileDrawer?.addEventListener('click', e => {
+    if (e.target === mobileDrawer || e.target.closest('.mobile-drawer-link')) {
+      closeMobileDrawer();
+    }
+  });
+
+  $('#mobileSearchBtn')?.addEventListener('click', openCmdPalette);
+
+  // Mobile Theme Cycle
+  const mobileThemeCycleBtn = $('#mobileThemeCycleBtn');
+  const mobileThemeDot = $('#mobileThemeDot');
+  const TONE_KEYS = ['latte', 'cream', 'readme', 'chainsaw', 'ostania', 'cyber'];
+  mobileThemeCycleBtn?.addEventListener('click', e => {
+    const cur = document.documentElement.dataset.tone || 'latte';
+    const next = TONE_KEYS[(TONE_KEYS.indexOf(cur) + 1) % TONE_KEYS.length];
+    applyTheme(next, e.clientX, e.clientY);
+    if (mobileThemeDot) mobileThemeDot.style.background = cssVar('--accent');
+    toast(`Palette: ${next.toUpperCase()}`, 'info');
+  });
+
+  // Mobile theme choices in drawer
+  $$('.mobile-theme-choice').forEach(btn => {
+    btn.addEventListener('click', e => {
+      applyTheme(btn.dataset.setTone, e.clientX, e.clientY);
+      closeMobileDrawer();
+    });
+  });
+
+  // Update active tab on hashchange
+  function updateMobileNavTab() {
+    const hash = location.hash || '#/';
+    $$('.mob-tab-btn').forEach(btn => {
+      const tab = btn.dataset.tab;
+      const isActive = (tab === 'home' && (hash === '#/' || hash === '')) ||
+                       (tab === 'demos' && hash.startsWith('#/demos')) ||
+                       (tab === 'tools' && hash.startsWith('#/tools')) ||
+                       (tab === 'repos' && hash.startsWith('#/repos')) ||
+                       (tab === 'tube' && (hash.startsWith('#/5tube') || hash.startsWith('#/tube')));
+      btn.classList.toggle('active', isActive);
+    });
+  }
+  window.addEventListener('hashchange', updateMobileNavTab);
+  updateMobileNavTab();
 
   // Chainsaw Ripcord Mode
   $('#revChainsawBtn')?.addEventListener('click', () => {

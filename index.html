@@ -240,7 +240,8 @@
 
   <!-- Fixed Topbar -->
   <header id="topbar">
-    <div class="topbar-bar">
+    <!-- Desktop Topbar Bar (>= 641px) -->
+    <div class="topbar-bar desktop-topbar">
       <!-- Left: Socials & Navigation -->
       <div class="nav-pill" style="gap:2px;">
         <button type="button" id="socialsMenuBtn" class="btn sm ghost" title="Socials Launcher">
@@ -315,7 +316,70 @@
         </button>
       </div>
     </div>
+
+    <!-- Dedicated Native Mobile Topbar (< 640px) -->
+    <div class="topbar-bar mobile-topbar">
+      <a href="#/" class="row items-center" style="gap:7px;text-decoration:none;">
+        <span class="mobile-logo-dot"></span>
+        <span class="mono font-bold" style="font-size:14px;letter-spacing:0.5px;color:var(--ink);">5IVESAW</span>
+        <span id="mobileAudioBadge" class="badge" style="font-size:9px;padding:1px 6px;background:var(--elevated);color:var(--accent);border:1px solid var(--line);">RADIO</span>
+      </a>
+
+      <div class="row items-center" style="gap:4px;">
+        <button type="button" id="mobileThemeCycleBtn" class="btn sm icon ghost" title="Cycle Theme Palette">
+          <span id="mobileThemeDot" class="dot-swatch" style="width:12px;height:12px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+        </button>
+        <button type="button" id="mobileSearchBtn" class="btn sm icon ghost" title="Search Commands">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button type="button" id="mobileMenuBtn" class="btn sm icon" title="Open Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:16px;height:16px;"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
   </header>
+
+  <!-- Dedicated Mobile Navigation Drawer Modal -->
+  <div id="mobileDrawerModal" class="modal" role="dialog" aria-modal="true">
+    <div class="card pad mobile-drawer-sheet">
+      <div class="row between items-center pb-3 border-b border-[var(--line)]">
+        <div class="row items-center" style="gap:8px;">
+          <span class="mono font-bold" style="font-size:16px;color:var(--ink);">5IVESAW</span>
+          <span class="chip xs font-mono">OSTANIA NODE</span>
+        </div>
+        <button type="button" id="closeMobileDrawerBtn" class="btn sm ghost font-bold">✕</button>
+      </div>
+
+      <div class="stack" style="gap:6px;margin:14px 0;">
+        <a href="#/" class="mobile-drawer-link" data-mview="home">🏠 Home Overview</a>
+        <a href="#/demos" class="mobile-drawer-link" data-mview="demos">⚡ Interactive Demos (15+)</a>
+        <a href="#/tools" class="mobile-drawer-link" data-mview="tools">🛠️ In-Browser Workshop Tools</a>
+        <a href="#/repos" class="mobile-drawer-link" data-mview="repos">📦 Repositories Directory (47+)</a>
+        <a href="#/5tube" class="mobile-drawer-link" data-mview="tube" style="color:#FF3B14;font-weight:700;">▶ 5Tube Synchronized Theater</a>
+      </div>
+
+      <div class="pb-3 border-b border-[var(--line)]">
+        <span class="eyebrow" style="font-size:10px;margin-bottom:8px;display:block;">SWITCH THEME PALETTE</span>
+        <div class="grid grid-2" style="gap:6px;" id="mobileThemeGrid">
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="latte">☕ Velvet Latte</button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cream">🥛 Warm Cream</button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="readme">🔴 README Red</button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="chainsaw">🪚 Chainsaw</button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="ostania">🌲 Ostania</button>
+          <button type="button" class="btn sm ghost mobile-theme-choice" data-set-tone="cyber">🌌 Cyber</button>
+        </div>
+      </div>
+
+      <div class="pt-3">
+        <span class="eyebrow" style="font-size:10px;margin-bottom:8px;display:block;">CONNECT &amp; LINKS</span>
+        <div class="row wrap" style="gap:8px;">
+          <a href="https://github.com/5ivesaw" target="_blank" rel="noopener noreferrer" class="btn sm ghost">GitHub ↗</a>
+          <a href="https://discord.com" target="_blank" rel="noopener noreferrer" class="btn sm ghost">Discord ↗</a>
+          <a href="https://youtube.com/@5ivesaw" target="_blank" rel="noopener noreferrer" class="btn sm ghost">YouTube ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Main Canvas -->
   <main id="appMain" class="max-w-5xl w-full mx-auto px-4 sm:px-6 pb-24">
@@ -869,6 +933,30 @@
       <span>Copy Page Link</span>
     </div>
   </div>
+
+  <!-- Dedicated Mobile App Bottom Navigation Bar (< 640px) -->
+  <nav id="mobileBottomNav" aria-label="Mobile Navigation">
+    <a href="#/" class="mob-tab-btn active" data-tab="home">
+      <span class="mob-tab-icon">🏠</span>
+      <span class="mob-tab-label">Home</span>
+    </a>
+    <a href="#/demos" class="mob-tab-btn" data-tab="demos">
+      <span class="mob-tab-icon">⚡</span>
+      <span class="mob-tab-label">Demos</span>
+    </a>
+    <a href="#/tools" class="mob-tab-btn" data-tab="tools">
+      <span class="mob-tab-icon">🛠️</span>
+      <span class="mob-tab-label">Tools</span>
+    </a>
+    <a href="#/repos" class="mob-tab-btn" data-tab="repos">
+      <span class="mob-tab-icon">📦</span>
+      <span class="mob-tab-label">Repos</span>
+    </a>
+    <a href="#/5tube" class="mob-tab-btn" data-tab="tube">
+      <span class="mob-tab-icon">📺</span>
+      <span class="mob-tab-label">5Tube</span>
+    </a>
+  </nav>
 
   <!-- Toast Host -->
   <div class="toast-host" role="status" aria-live="polite"></div>
