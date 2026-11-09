@@ -2169,10 +2169,140 @@ pre, code, .code-block, .code-block *,
 }
 
 /* Off-screen rendering containment for silky smooth 60+ FPS scrolling */
-#repoContainer > *,
 #mediaGridContainer > *,
-#reposDirectoryGrid > *,
 #demosDirectoryGrid > * {
   content-visibility: auto;
   contain-intrinsic-size: 0 160px;
 }
+
+/* Sawbyte uses its own Minecraft font and real block/item textures from GitHub. */
+@font-face {
+  font-family: MinecraftOfficial;
+  src: url('../fonts/minecraft.ttf') format('truetype');
+  font-display: swap;
+}
+.sawbyte-feature {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 18px;
+  padding: 16px;
+  border: 4px solid #05080b;
+  border-radius: 0;
+  background-color: #151923;
+  background-image: linear-gradient(90deg, rgba(8, 13, 19, .89), rgba(9, 16, 22, .76)),
+    url('https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/deepslate.png');
+  background-size: auto, 32px 32px;
+  box-shadow: inset 0 0 0 2px #56606e, 4px 5px 0 #090b0e;
+  color: #fff;
+  font-family: MinecraftOfficial, monospace;
+  image-rendering: pixelated;
+}
+.sawbyte-mark {
+  flex: 0 0 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #080a0d;
+  background: #20282d url('https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/grass_block_side.png') center / 32px;
+  box-shadow: inset 0 0 0 2px #748a70, 3px 3px 0 #050708;
+}
+.sawbyte-mark img { width: 44px; height: 44px; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(2px 2px 0 #000); }
+.sawbyte-copy { flex: 1; min-width: 0; }
+.sawbyte-eyebrow { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; color: #a9e986; font-size: 10px; line-height: 1.4; text-shadow: 2px 2px #1a3b20; }
+.sawbyte-eyebrow img, .sawbyte-enter img { width: 16px; height: 16px; object-fit: contain; image-rendering: pixelated; }
+.sawbyte-copy h3 { margin: 3px 0 5px; color: #55ffff; font: 400 24px/1 MinecraftOfficial, monospace; text-shadow: 3px 3px #153f3f; }
+.sawbyte-copy p { margin: 0; color: #eee; font: 400 12px/1.45 MinecraftOfficial, monospace; text-shadow: 2px 2px #222; }
+.sawbyte-enter {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 45px;
+  padding: 9px 12px;
+  border: 3px solid #0a0d0d;
+  border-radius: 0;
+  background: #337045;
+  box-shadow: inset 2px 2px #82bb7d, inset -2px -2px #164729, 3px 3px #050708;
+  color: #fff;
+  font: 400 12px MinecraftOfficial, monospace;
+  text-shadow: 2px 2px #16351d;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.sawbyte-enter:hover, .sawbyte-enter:focus-visible { background: #479557; color: #fff; outline: 2px solid #55ffff; outline-offset: 2px; }
+.repo-compact-card { display: flex; flex-direction: column; gap: 7px; padding: 14px; min-width: 0; }
+.repo-compact-top, .repo-compact-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.repo-compact-lang { display: inline-flex; align-items: center; gap: 5px; font: 11px var(--font-mono); color: var(--faint); }
+.repo-compact-card h3 { margin: 0; color: var(--ink); font-size: 14px; overflow-wrap: anywhere; }
+.repo-compact-card p { margin: 0; min-height: 32px; line-height: 1.4; }
+.repo-compact-actions { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); font: 11px var(--font-mono); }
+.repo-compact-actions a { color: var(--accent); text-decoration: none; }
+.repo-compact-actions a:hover, .repo-compact-actions a:focus-visible { text-decoration: underline; }
+.repo-info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 12px; }
+.repo-info-grid > div { display: flex; flex-direction: column; gap: 2px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm); min-width: 0; }
+.repo-info-grid span { font: 10px var(--font-mono); color: var(--faint); }
+.repo-info-grid strong { font-size: 12px; overflow-wrap: anywhere; }
+.repo-info-grid a { color: var(--accent); }
+.repo-topic-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.repo-source-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.repo-source-bar p { margin: 4px 0 0; }
+@media (max-width: 640px) {
+  .sawbyte-feature { flex-wrap: wrap; gap: 12px; padding: 14px; }
+  .sawbyte-copy { flex-basis: calc(100% - 76px); }
+  .sawbyte-enter { width: 100%; text-align: center; }
+  .repo-info-grid { grid-template-columns: 1fr; gap: 6px; }
+  .repo-source-bar { flex-wrap: wrap; }
+}
+
+/* Sawbyte disc_maker, adapted to the portal's cards and music dock. */
+.disc-maker-page { max-width: 1040px; margin: 0 auto 40px; }
+.disc-maker-page h1 { margin: 2px 0 4px; font: 400 38px/1.2 var(--font-serif); }
+.disc-maker-page h2 { margin: 2px 0 3px; font: 400 24px/1.2 var(--font-serif); }
+.disc-maker-page p { margin: 0; }
+.dm-stage { display: flex; align-items: center; gap: 16px; padding: 17px; border: 2px solid #151923; background: #111823; color: #f5f5ee; border-radius: 8px; }
+.dm-stage .eyebrow { color: #83e0db; }
+.dm-stage .badge { margin-left: 5px; color: #c7f48f; background: #25392d; }
+.dm-stage h2 { color: #55ffff; font: 400 23px/1.1 MinecraftOfficial, monospace; text-shadow: 2px 2px #153f3f; }
+.dm-stage p, .dm-stage small { color: #d9e4e9; font: 11px/1.5 MinecraftOfficial, monospace; }
+.dm-stage-copy { flex: 1; min-width: 0; }
+.dm-disc-button { flex: 0 0 70px; width: 70px; height: 70px; display: grid; place-items: center; padding: 8px; border: 3px solid #060708; border-radius: 0; cursor: pointer; background: #3d2c1f url('https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/block/jukebox_top.png') center / cover; box-shadow: inset 2px 2px #946c42, 3px 3px #050708; }
+.dm-disc-button img { width: 46px; height: 46px; image-rendering: pixelated; }
+.disc-spinning { animation: dm-spin 3s linear infinite; }
+@keyframes dm-spin { to { transform: rotate(360deg); } }
+.dm-stage-actions { display: flex; flex-direction: column; gap: 5px; align-items: stretch; }
+.dm-stage-actions .btn { min-height: 32px; justify-content: center; white-space: nowrap; }
+.dm-icon { display: inline-block; width: 17px; height: 17px; object-fit: contain; vertical-align: middle; image-rendering: pixelated; }
+.dm-controls-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin: 15px 0 18px; }
+.dm-control { display: flex; flex-direction: column; gap: 7px; padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); min-width: 0; }
+.dm-control > span { display: flex; justify-content: space-between; gap: 8px; color: var(--ink); font: 11px var(--font-mono); }
+.dm-control output { color: var(--accent); white-space: nowrap; }
+.dm-control .input { width: 100%; height: 32px; font-size: 11px; }
+.dm-control input[type="range"] { width: 100%; accent-color: var(--accent); }
+.dm-sequencer-head { display: flex; justify-content: space-between; align-items: end; gap: 10px; margin-bottom: 8px; }
+.dm-sequencer-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); padding: 10px; }
+#dm-sequencer-grid { min-width: 720px; display: grid; gap: 5px; }
+.sequencer-row { display: grid; grid-template-columns: 165px repeat(16,minmax(0,1fr)); gap: 3px; align-items: center; }
+.seq-track-label { display: flex; align-items: center; gap: 6px; min-width: 0; font: 10px var(--font-mono); color: var(--ink); cursor: pointer; }
+.seq-track-label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seq-track-label img { width: 18px; height: 18px; image-rendering: pixelated; }
+.seq-cell { display: grid; place-items: center; min-width: 0; height: 28px; border: 1px solid var(--line-strong); border-radius: 3px; background: var(--elevated); color: #fff; font: 9px var(--font-mono); cursor: pointer; }
+.seq-cell.beat-marker { border-color: var(--accent); }
+.seq-cell.active-step { background: #256f6a; border-color: #55ffff; }
+.seq-cell.track-bass.active-step { background: #584597; border-color: #aa89e4; }
+.seq-cell.track-drums.active-step { background: #9a5330; border-color: #e5a05f; }
+.seq-cell.track-fx.active-step { background: #7d427e; border-color: #d893df; }
+.seq-cell.playhead-now { outline: 2px solid #e8c952; outline-offset: -2px; box-shadow: 0 0 8px #e8c952; }
+.dm-export { display: flex; flex-direction: column; gap: 12px; }
+.dm-export-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.dm-export-controls label { display: flex; flex-direction: column; gap: 3px; font: 10px var(--font-mono); color: var(--faint); }
+.dm-export-controls .input { height: 34px; min-width: 110px; font-size: 11px; }
+#dm-exported-preview-wrap { align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--line); padding-top: 10px; font: 11px var(--font-mono); }
+#dm-exported-audio-preview { min-width: 220px; max-width: 100%; height: 34px; }
+#dockSourceSelect { width: 96px; flex: 0 0 auto; height: 30px; font: 10px var(--font-mono); }
+@media (max-width: 900px) { .dm-controls-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .dm-stage { flex-wrap: wrap; } .dm-stage-actions { flex-direction: row; width: 100%; flex-wrap: wrap; } }
+@media (max-width: 640px) { .dm-controls-grid { grid-template-columns: 1fr; } .dm-disc-button { flex-basis: 54px; width: 54px; height: 54px; } .dm-disc-button img { width: 36px; height: 36px; } .dm-stage-copy { flex-basis: calc(100% - 72px); } .dm-stage-actions .btn { flex: 1; } #dockSourceSelect { width: 76px; font-size: 9px; } }
+
+.dock-source-btn img { width: 20px; height: 20px; image-rendering: pixelated; }
+.disc-source #dockShuffleBtn, .disc-source #dockRepeatBtn { display: none; }

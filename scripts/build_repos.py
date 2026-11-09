@@ -1,77 +1,114 @@
 #!/usr/bin/env python3
-"""Build docs/data/repos.json: public repos of 5ivesaw + icon/description scraped from each README."""
-import json, os, re, urllib.request, datetime
+"""Build the small, static repository catalog from public GitHub metadata.
+
+No README scraping or guessed icons/sites: those made the catalog noisy and stale.
+Run from anywhere; both Pages layouts are written together.
+"""
+
+import datetime
+import json
+import os
+from pathlib import Path
+import urllib.parse
+import urllib.request
+
 USER = "5ivesaw"
+ROOT = Path(__file__).resolve().parents[1]
 TOKEN = os.environ.get("GITHUB_TOKEN")
+FEATURED = (
+    "Sawbyte", "FiveCut", "Ascii-Media-Player", "my-room",
+    "ink-game", "fivesawUtils", "Mimic-5", "5ivesaw.github.io",
+)
+DESCRIPTIONS = {
+    "Sawbyte": "Rust Minecraft 26.3 client, desktop launcher, and bot engine.",
+    "FiveCut": "Local-first video editor with a programmable editing API.",
+    "Ascii-Media-Player": "Local audio player with live ASCII visualization.",
+    "ink-game": "Playable 3D word and territory strategy game.",
+    "fivesawUtils": "Pathfinding utilities for NeoScripts.",
+    "5ivesaw.github.io": "Personal portal, browser tools, and interactive demos.",
+}
 
-def get(url, js=True):
-    h = {"User-Agent": "5ivesaw-site", "Accept": "application/vnd.github+json"}
-    if TOKEN and "api.github.com" in url: h["Authorization"] = f"Bearer {TOKEN}"
+
+def github_page(page):
+    url = f"https://api.github.com/users/{USER}/repos?per_page=100&sort=pushed&page={page}"
+    headers = {"User-Agent": "5ivesaw-site", "Accept": "application/vnd.github+json"}
+    if TOKEN:
+        headers["Authorization"] = f"Bearer {TOKEN}"
+    with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=25) as response:
+        return json.load(response)
+
+
+def public_site(value):
+    if not value:
+        return ""
+    value = value.strip()
+    parsed = urllib.parse.urlparse(value)
+    return value if parsed.scheme in ("http", "https") and parsed.netloc else ""
+
+
+def pages_site(repo):
+    """Only add a Pages URL when it actually serves a page."""
+    if not repo.get("has_pages"):
+        return ""
+    name = repo["name"]
+    url = f"https://{USER}.github.io/" if name == f"{USER}.github.io" else f"https://{USER}.github.io/{name}/"
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers=h), timeout=20) as r:
-            b = r.read().decode("utf-8", "replace")
-            return json.loads(b) if js else b
+        request = urllib.request.Request(url, headers={"User-Agent": "5ivesaw-site"}, method="HEAD")
+        with urllib.request.urlopen(request, timeout=8) as response:
+            if response.status == 200 and "text/html" in response.headers.get("Content-Type", ""):
+                return url
     except Exception:
-        return None
+        pass
+    return ""
 
-NOISE = ("shields.io", "badge.fury", "travis-ci", "codecov", "/workflows/", "readme-typing-svg",
-         "contrib.rocks", "star-history", "komarev", "github-readme-stats", "visitor")
 
-def resolve(u, repo, br):
-    u = u.strip().strip("'\"")
-    if "github.com/" in u and "/blob/" in u:
-        return u.replace("github.com/", "raw.githubusercontent.com/").replace("/blob/", "/")
-    if u.startswith(("http://", "https://", "data:")): return u
-    return f"https://raw.githubusercontent.com/{USER}/{repo}/{br}/{re.sub(r'^\.?/', '', u)}"
+def main():
+    repositories = []
+    page = 1
+    while True:
+        batch = github_page(page)
+        if not isinstance(batch, list):
+            raise RuntimeError("GitHub did not return a repository list")
+        repositories.extend(batch)
+        if len(batch) < 100:
+            break
+        page += 1
 
-def parse(md, repo, br):
-    cands = []
-    for m in re.finditer(r'!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)', md):
-        cands.append((m.group(2), m.group(1), "", m.start()))
-    for m in re.finditer(r'<img\b[^>]*?\bsrc=["\']([^"\']+)["\'][^>]*>', md, re.I):
-        alt = re.search(r'\balt=["\']([^"\']*)', m.group(0), re.I)
-        cands.append((m.group(1), alt.group(1) if alt else "", m.group(0), m.start()))
-    cands = [c for c in cands if not any(n in (c[0] + c[1]).lower() for n in NOISE)]
-    icon = None
-    if len(cands) == 1:
-        icon = cands[0][0]
-    elif cands:
-        best = -1e9
-        for i, (u, alt, tag, pos) in enumerate(cands):
-            hay = f"{u} {alt} {tag}".lower(); s = 0
-            for kw in ("icon", "logo", "favicon", "avatar", "emblem", "brand", "mascot", repo.lower()):
-                if kw in hay: s += 50
-            w = re.search(r'\bwidth=["\']?(\d+)', tag)
-            if w and 24 <= int(w.group(1)) <= 260: s += 35
-            if pos < 500: s += 25
-            if i == 0: s += 15
-            if "skillicons" in hay or "simpleicons" in hay: s -= 40
-            if s > best: best, icon = s, u
-    desc = None
-    text = re.sub(r"<!--.*?-->", "", md, flags=re.S)
-    text = re.sub(r"<[^>]+>", " ", text)
-    for line in (l.strip() for l in text.splitlines()):
-        if not line or line.startswith(("#", "!", "[!", "```", "|", "---", "<")): continue
-        clean = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", line)
-        clean = re.sub(r"[*_`~>]", "", clean).strip()
-        if len(clean) >= 18: desc = clean[:160]; break
-    return (resolve(icon, repo, br) if icon else None), desc
+    rows = []
+    for repo in repositories:
+        if repo.get("private"):
+            continue
+        name = repo["name"]
+        description = DESCRIPTIONS.get(name, (repo.get("description") or "").strip())
+        if name not in DESCRIPTIONS and len(description) < 20:
+            description = ""
+        if len(description) > 140:
+            description = description[:140].rsplit(" ", 1)[0].rstrip(" ,;:") + "…"
+        rows.append({
+            "name": name,
+            "desc": description,
+            "lang": "Rust + Java" if name == "Sawbyte" else (repo.get("language") or ""),
+            "stars": repo.get("stargazers_count", 0),
+            "forks": repo.get("forks_count", 0),
+            "fork": repo.get("fork", False),
+            "home": public_site(repo.get("homepage")) or pages_site(repo),
+            "topics": repo.get("topics") or [],
+            "pushed": repo.get("pushed_at"),
+            "branch": repo.get("default_branch") or "main",
+            "archived": repo.get("archived", False),
+            "featured": name in FEATURED and not repo.get("archived", False),
+        })
 
-repos = get(f"https://api.github.com/users/{USER}/repos?per_page=100&sort=pushed") or []
-out = []
-for r in repos:
-    if r.get("private"): continue
-    br = r.get("default_branch") or "main"
-    md = get(f"https://raw.githubusercontent.com/{USER}/{r['name']}/{br}/README.md", js=False) or ""
-    icon, rdesc = parse(md, r["name"], br) if md else (None, None)
-    out.append({
-        "name": r["name"], "desc": r.get("description") or rdesc or "", "readme": rdesc or "",
-        "lang": r.get("language") or "", "stars": r.get("stargazers_count", 0),
-        "forks": r.get("forks_count", 0), "fork": r.get("fork", False),
-        "home": r.get("homepage") or "", "topics": r.get("topics") or [],
-        "pushed": r.get("pushed_at"), "created": r.get("created_at"), "branch": br, "icon": icon,
-        "pages": r.get("has_pages", False), "archived": r.get("archived", False),
-    })
-json.dump({"user": USER, "updated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
-           "repos": out}, open("docs/data/repos.json", "w"), ensure_ascii=False, separators=(",", ":"))
-print(len(out), "repos;", sum(1 for x in out if x["icon"]), "icons")
+    catalog = {
+        "user": USER,
+        "updated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
+        "repos": rows,
+    }
+    content = json.dumps(catalog, ensure_ascii=False, indent=2) + "\n"
+    for target in (ROOT / "data/repos.json", ROOT / "docs/data/repos.json"):
+        target.write_text(content, encoding="utf-8")
+    print(f"{len(rows)} public repositories; {sum(row['featured'] for row in rows)} featured")
+
+
+if __name__ == "__main__":
+    main()

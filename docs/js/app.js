@@ -1,3 +1,5 @@
+import { discMaker } from './core/disc-maker.js';
+import { mountDiscMakerPage } from './core/disc-maker-ui.js';
 // 5IVESAW — Application Shell & Router.
 // Fast, zero-build static portal with YouTube streaming background music, in-browser tools & repo demos.
 import {
@@ -49,9 +51,6 @@ const state = {
   repos: [],
   youtubeItems: [],
   currentUnmount: null,
-  scope: 'flagship',
-  filter: 'all',
-  searchQuery: '',
   activeModalRepo: null,
   activeVideo: null,
   csmBoost: 1
@@ -163,342 +162,115 @@ function initHeroCanvas() {
   requestAnimationFrame(draw);
 }
 
-// Markdown formatting helper
-function escapeHtml(str) {
-  return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// Repository data is generated from GitHub metadata. Keep all external text escaped.
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[char]);
 }
 
-function renderMarkdown(md, repo = null) {
-  if (!md) return '<p class="muted italic">No README content available.</p>';
-  let text = md.replace(/\r\n/g, '\n');
-  const rawBase = repo ? `https://raw.githubusercontent.com/5ivesaw/${repo.name}/${repo.branch || 'main'}/` : '';
-
-  // Fenced code blocks
-  const codeBlocks = [];
-  text = text.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
-    const idx = codeBlocks.length;
-    codeBlocks.push(`<pre class="code-block" data-lang="${lang || 'text'}"><code>${escapeHtml(code.trim())}</code></pre>`);
-    return `<!--CODEBLOCK_${idx}-->`;
-  });
-
-  // Inline code
-  text = text.replace(/`([^`]+)`/g, '<code class="mono-inline">$1</code>');
-
-  // Headings
-  text = text.replace(/^###### (.*$)/gim, '<h6 class="font-bold mono mt-4 mb-2 text-paper-ink">$1</h6>');
-  text = text.replace(/^##### (.*$)/gim, '<h5 class="font-bold mono mt-4 mb-2 text-paper-ink">$1</h5>');
-  text = text.replace(/^#### (.*$)/gim, '<h4 class="font-bold mono mt-4 mb-2 text-paper-ink">$1</h4>');
-  text = text.replace(/^### (.*$)/gim, '<h3 class="font-bold serif text-xl mt-6 mb-2 text-paper-ink border-b border-paper-line pb-1">$1</h3>');
-  text = text.replace(/^## (.*$)/gim, '<h2 class="font-bold serif text-2xl mt-8 mb-3 text-paper-ink border-b border-paper-line pb-1">$1</h2>');
-  text = text.replace(/^# (.*$)/gim, '<h1 class="font-bold serif text-3xl mt-6 mb-4 text-paper-ink border-b border-paper-line pb-2">$1</h1>');
-
-  // Resolve HTML <img> tags with relative paths
-  text = text.replace(/<img([^>]+)src=["']([^"']+)["']([^>]*)>/gi, (match, pre, src, post) => {
-    let finalSrc = src.trim();
-    if (rawBase && !finalSrc.startsWith('http://') && !finalSrc.startsWith('https://') && !finalSrc.startsWith('data:')) {
-      finalSrc = rawBase + finalSrc.replace(/^\.\//, '').replace(/^\//, '');
-    }
-    return `<img${pre}src="${finalSrc}"${post} class="my-4 max-w-full rounded border border-paper-line" loading="lazy" />`;
-  });
-
-  // Resolve Markdown images ![alt](src)
-  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => {
-    let finalSrc = src.trim();
-    if (rawBase && !finalSrc.startsWith('http://') && !finalSrc.startsWith('https://') && !finalSrc.startsWith('data:')) {
-      finalSrc = rawBase + finalSrc.replace(/^\.\//, '').replace(/^\//, '');
-    }
-    return `<img src="${finalSrc}" alt="${alt}" class="my-4 max-w-full rounded border border-paper-line" loading="lazy" />`;
-  });
-
-  // Links
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="accent underline font-medium hover:text-paper-ink">$1 ↗</a>');
-
-  // Blockquotes
-  text = text.replace(/^\> (.*$)/gim, '<blockquote class="border-l-4 border-paper-accent pl-3 my-3 italic text-paper-muted">$1</blockquote>');
-
-  // Unordered list items
-  text = text.replace(/^\s*[-*+]\s+(.*$)/gim, '<li class="ml-4 list-disc text-sm text-paper-ink my-1">$1</li>');
-
-  // Bold & Italic
-  text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
-  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-  // Paragraphs
-  const paragraphs = text.split(/\n\n+/);
-  text = paragraphs.map(p => {
-    p = p.trim();
-    if (!p) return '';
-    if (p.startsWith('<h') || p.startsWith('<pre') || p.startsWith('<blockquote') || p.startsWith('<li') || p.startsWith('<!--CODEBLOCK') || p.startsWith('<img') || p.startsWith('<p')) {
-      return p;
-    }
-    return `<p class="my-2.5 text-sm leading-relaxed text-paper-ink">${p.replace(/\n/g, '<br/>')}</p>`;
-  }).join('\n');
-
-  // Restore code blocks
-  text = text.replace(/<!--CODEBLOCK_(\d+)-->/g, (_, i) => codeBlocks[+i] || '');
-
-  return text;
+function repoUrl(repo) {
+  return `https://github.com/5ivesaw/${encodeURIComponent(repo.name)}`;
 }
 
-// Dedicated Automated Repository Workspace Page
-function renderRepoPage(repoName, mountPoint) {
-  let repo = state.repos.find(r => r.name.toLowerCase() === repoName.toLowerCase());
-  if (!repo) {
-    repo = {
-      name: repoName,
-      desc: 'Repository on GitHub by @5ivesaw.',
-      readme: '',
-      lang: 'Code',
-      stars: 0,
-      forks: 0,
-      branch: 'main',
-      topics: [],
-      icon: null
-    };
-  }
+function siteUrl(value) {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch { return ''; }
+}
 
-  // Check if repo has an in-portal demo
-  let demoLink = null;
-  if (repo.name === 'fivesawUtils') {
-    demoLink = { title: 'A* Pathfinder Demo', href: '#/demos/pathfinder', blurb: 'Interactive 2D A* grid with Catmull-Rom spline path smoothing.' };
-  } else if (repo.name === 'Ascii-Media-Player') {
-    demoLink = { title: 'ASCII Media Player Demo', href: '#/demos/ascii-player', blurb: 'Live WebAudio spectrum analyzer rendered as CRT terminal ASCII art.' };
-  } else if (repo.name === 'a-apple-that-is-bad') {
-    demoLink = { title: 'Cursed Text Renderer Demo', href: '#/demos/bad-apple', blurb: 'Procedural and live webcam cursed text animation with scanlines.' };
-  } else if (repo.name === '5ivesaw') {
-    demoLink = { title: 'Arcade Snake Demo', href: './demos/hell-snake/index.html', blurb: 'Original retro canvas snake game.', external: true };
-  }
+function repoSummary(repo) {
+  return repo.desc ? escapeHtml(repo.desc) : 'Public repository. See GitHub for details.';
+}
 
-  // Check if repo has an external live site
-  const liveSite = repo.home || (repo.pages ? `https://5ivesaw.github.io/${repo.name}/` : null);
-
-  // Related repos
-  const related = state.repos
-    .filter(r => r.name !== repo.name && (r.lang === repo.lang || r.stars > 0))
-    .slice(0, 3);
-
-  const cloneHttps = `git clone https://github.com/5ivesaw/${repo.name}.git`;
-  const cloneSsh = `git clone git@github.com:5ivesaw/${repo.name}.git`;
-  const cloneCli = `gh repo clone 5ivesaw/${repo.name}`;
-
-  mountPoint.innerHTML = `
-    <div class="repo-page-wrap stack" style="gap:20px;max-width:1040px;margin:0 auto;padding-bottom:40px;">
-      
-      <!-- 1. Hero Workspace Card -->
-      <section class="card pad repo-hero-card">
-        <div class="repo-header-top">
-          <div class="repo-header-main">
-            <div class="repo-avatar-box">
-              ${repo.icon ? `<img src="${repo.icon}" alt="${repo.name}" onerror="this.parentElement.innerHTML='${getLangIcon(repo.lang)}'"/>` : getLangIcon(repo.lang)}
-            </div>
-            <div class="repo-header-text">
-              <div class="repo-title-row">
-                <span class="badge" style="font-size:10.5px;">5ivesaw /</span>
-                <h1 class="repo-title">${repo.name}</h1>
-                <button type="button" id="copyRepoNameBtn" class="btn sm ghost" title="Copy repository name" style="padding:2px 8px;height:24px;">
-                  ${icon('copy')}
-                </button>
-                <span class="badge" style="background:var(--elevated);font-size:9.5px;">${repo.fork ? 'Fork' : 'Public'}</span>
-              </div>
-              <p class="repo-desc">${repo.desc || repo.readme || 'Public repository by @5ivesaw.'}</p>
-              
-              <!-- Meta Chips -->
-              <div class="repo-meta-chips">
-                <span class="chip xs font-mono">${getLangIcon(repo.lang)} <strong style="color:var(--ink);">${repo.lang || 'Code'}</strong></span>
-                <span class="chip xs font-mono">★ <strong style="color:var(--ink);">${repo.stars || 0}</strong> stars</span>
-                <span class="chip xs font-mono">⑂ <strong style="color:var(--ink);">${repo.forks || 0}</strong> forks</span>
-                <span class="chip xs font-mono">⎇ <strong style="color:var(--ink);">${repo.branch || 'main'}</strong></span>
-                ${repo.pushed ? `<span class="chip xs font-mono">Pushed <strong style="color:var(--ink);">${new Date(repo.pushed).toLocaleDateString()}</strong></span>` : ''}
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Actions -->
-          <div class="repo-header-actions">
-            <a href="https://github.com/5ivesaw/${repo.name}" target="_blank" rel="noopener noreferrer" class="btn sm primary">
-              ${icon('github')} GitHub Repository ↗
-            </a>
-            ${liveSite ? `
-              <a href="${liveSite}" target="_blank" rel="noopener noreferrer" class="btn sm ghost" style="border-color:var(--accent);color:var(--accent);">
-                ${icon('external')} Live Site ↗
-              </a>
-            ` : ''}
-            <a href="https://github.com/5ivesaw/${repo.name}/archive/refs/heads/${repo.branch || 'main'}.zip" class="btn sm ghost" title="Download ZIP archive">
-              ${icon('download')} ZIP
-            </a>
-          </div>
-        </div>
-
-        ${demoLink ? `
-          <div class="repo-demo-banner tile hover">
-            <div class="stack" style="gap:3px;">
-              <div class="row items-center" style="gap:6px;">
-                <span class="badge" style="background:var(--accent);color:#fff;font-size:9.5px;font-weight:700;">INTERACTIVE DEMO</span>
-                <span class="font-bold text-sm" style="color:var(--ink);">${demoLink.title}</span>
-              </div>
-              <p class="xs muted" style="margin:0;">${demoLink.blurb}</p>
-            </div>
-            <a href="${demoLink.href}" ${demoLink.external ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn sm primary" style="background:var(--accent);border-color:var(--accent);box-shadow:0 4px 12px rgba(255,59,20,0.35);">
-              ${icon('zap')} Launch Interactive Demo ↗
-            </a>
-          </div>
-        ` : ''}
-      </section>
-
-      <!-- 2. Terminal Clone Bar -->
-      <section class="card pad" style="padding:14px 18px;">
-        <div class="row between wrap items-center" style="margin-bottom:10px;gap:8px;">
-          <div class="row items-center" style="gap:8px;">
-            <span class="eyebrow">CLONE WORKSPACE</span>
-            <div class="seg" id="cloneProtocolSeg">
-              <button type="button" data-proto="https" class="bg-paper-elevated font-semibold">HTTPS</button>
-              <button type="button" data-proto="ssh">SSH</button>
-              <button type="button" data-proto="cli">GitHub CLI</button>
-            </div>
-          </div>
-          <button type="button" id="copyCloneBtn" class="btn sm primary">
-            ${icon('copy')} Copy Command
-          </button>
-        </div>
-        <div class="terminal-bar" style="background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 14px;font-family:var(--font-mono);font-size:12px;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:8px;overflow-x:auto;">
-          <span id="cloneCommandText" class="select-all">${cloneHttps}</span>
-        </div>
-      </section>
-
-      <!-- 3. Automated README Section -->
-      <section class="card pad">
-        <div class="row between wrap items-center" style="border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;gap:8px;">
-          <div class="row items-center" style="gap:8px;">
-            <span class="eyebrow">DOCUMENTATION</span>
-            <span class="mono text-xs font-semibold text-paper-ink">README.md</span>
-            <span id="readmeSourceBadge" class="badge" style="font-size:9px;">Loading live...</span>
-          </div>
-          <div class="row items-center" style="gap:6px;">
-            <div class="seg" id="readmeViewModeSeg">
-              <button type="button" data-rmode="rendered" class="bg-paper-elevated font-semibold">Rendered</button>
-              <button type="button" data-rmode="raw">Raw Markdown</button>
-            </div>
-            <a href="https://raw.githubusercontent.com/5ivesaw/${repo.name}/${repo.branch || 'main'}/README.md" target="_blank" rel="noopener noreferrer" class="btn sm ghost" style="padding:0 8px;font-size:11px;">
-              Raw File ↗
-            </a>
-          </div>
-        </div>
-
-        <div id="repoReadmeContainer" class="readme-body">
-          <div class="animate-pulse stack" style="gap:10px;padding:20px 0;">
-            <div style="height:20px;width:60%;background:var(--surface);border-radius:4px;"></div>
-            <div style="height:14px;width:90%;background:var(--surface);border-radius:4px;"></div>
-            <div style="height:14px;width:75%;background:var(--surface);border-radius:4px;"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 4. Ecosystem & Related Workspaces -->
-      ${related.length ? `
-        <section class="card pad" style="padding:16px;">
-          <div class="section-head" style="margin-bottom:12px;">
-            <span class="eyebrow">MORE IN ${repo.lang ? repo.lang.toUpperCase() : '5IVESAW'}</span>
-            <h3 class="font-bold text-base text-paper-ink">Related Repositories</h3>
-          </div>
-          <div class="grid grid-3">
-            ${related.map(r => `
-              <a href="#/repos/${r.name}" class="tile hover" style="padding:12px;">
-                <div class="row between xs mono faint">
-                  <span class="row items-center" style="gap:4px;">${getLangIcon(r.lang)} ${r.lang || 'Code'}</span>
-                  <span>★ ${r.stars || 0}</span>
-                </div>
-                <h4 class="font-semibold text-sm mono text-paper-ink" style="margin-top:6px;">${r.name}</h4>
-                <p class="xs muted clamp-2" style="margin-top:4px;">${r.desc || r.readme || 'No description'}</p>
-              </a>
-            `).join('')}
-          </div>
-        </section>
-      ` : ''}
-
+function repoCard(repo) {
+  const site = siteUrl(repo.home);
+  return `<article class="tile repo-compact-card">
+    <div class="repo-compact-top">
+      <span class="repo-compact-lang">${getLangIcon(repo.lang)} ${escapeHtml(repo.lang || 'Code')}</span>
+      ${repo.fork ? '<span class="badge">Fork</span>' : ''}
+      ${repo.archived ? '<span class="badge">Archived</span>' : ''}
     </div>
-  `;
+    <h3 class="mono font-semibold">${escapeHtml(repo.name)}</h3>
+    <p class="xs muted clamp-2">${repoSummary(repo)}</p>
+    <div class="repo-compact-actions">
+      <a href="#/repos/${encodeURIComponent(repo.name)}" class="accent font-medium">Details ↗</a>
+      ${site ? `<a href="${escapeHtml(site)}" target="_blank" rel="noopener noreferrer">Site ↗</a>` : ''}
+      <a href="${repoUrl(repo)}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+    </div>
+  </article>`;
+}
 
-  // Copy Repo Name
-  $('#copyRepoNameBtn')?.addEventListener('click', () => {
-    copyText(repo.name);
-    toast('Copied repo name', 'ok');
-    sfx('copy');
-  });
+function sawbyteFeature(repo) {
+  const site = siteUrl(repo?.home) || 'https://5ivesaw.github.io/Sawbyte/';
+  const minecraft = 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/';
+  return `<div class="sawbyte-feature" aria-label="Sawbyte project">
+    <div class="sawbyte-mark"><img src="https://raw.githubusercontent.com/5ivesaw/Sawbyte/main/docs/assets/sawbyte.png" alt="Sawbyte logo" loading="lazy" /></div>
+    <div class="sawbyte-copy">
+      <span class="sawbyte-eyebrow"><img src="${minecraft}block/grass_block_side.png" alt="" loading="lazy" /> MINECRAFT 26.3 <img src="${minecraft}item/diamond.png" alt="" loading="lazy" /> RUST CLIENT + BOT ENGINE</span>
+      <h3>sawbyte</h3>
+      <p>Native client, desktop launcher, and programmable bot engine.</p>
+    </div>
+    <a class="sawbyte-enter" href="${escapeHtml(site)}" target="_blank" rel="noopener noreferrer"><img src="${minecraft}block/crafting_table_front.png" alt="" loading="lazy" /> Enter website <span aria-hidden="true">↗</span></a>
+  </div>`;
+}
 
-  // Clone Protocol Switcher
-  const cmdText = $('#cloneCommandText');
-  let currentCmd = cloneHttps;
-  $$('#cloneProtocolSeg button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('#cloneProtocolSeg button').forEach(b => b.classList.toggle('bg-paper-elevated', b === btn));
-      const p = btn.dataset.proto;
-      if (p === 'https') currentCmd = cloneHttps;
-      else if (p === 'ssh') currentCmd = cloneSsh;
-      else if (p === 'cli') currentCmd = cloneCli;
-      cmdText.textContent = currentCmd;
-      sfx('tick');
-    });
-  });
-
-  // Copy Clone Command
-  $('#copyCloneBtn')?.addEventListener('click', () => {
-    copyText(currentCmd);
-    toast('Copied clone command to clipboard!', 'ok');
-    sfx('copy');
-  });
-
-  // Async Fetch & Render README
-  const readmeBox = $('#repoReadmeContainer');
-  const sourceBadge = $('#readmeSourceBadge');
-  let rawContent = repo.readme || repo.desc || '';
-  let renderedHtml = renderMarkdown(rawContent);
-
-  // Initial preview render
-  if (readmeBox && rawContent) {
-    readmeBox.innerHTML = renderedHtml;
-    sourceBadge.textContent = 'Pre-cached';
+function renderRepoPage(repoName, mountPoint) {
+  const repo = state.repos.find(r => r.name.toLowerCase() === repoName.toLowerCase());
+  if (!repo) {
+    mountPoint.innerHTML = `<section class="card pad center"><h1>Repository not found</h1><p class="muted">This repository is not in the public catalog.</p><a href="#/repos" class="btn sm primary">Browse repositories</a></section>`;
+    return;
   }
 
-  // Fetch full live README from GitHub raw CDN
-  fetch(`https://raw.githubusercontent.com/5ivesaw/${repo.name}/${repo.branch || 'main'}/README.md`)
-    .then(res => {
-      if (!res.ok) throw new Error('Status ' + res.status);
-      return res.text();
-    })
-    .then(text => {
-      if (text && text.trim()) {
-        rawContent = text;
-        renderedHtml = renderMarkdown(text);
-        if (readmeBox) {
-          readmeBox.innerHTML = renderedHtml;
-        }
-        if (sourceBadge) {
-          sourceBadge.textContent = 'Live from GitHub';
-          sourceBadge.classList.add('bg-paper-elevated');
-        }
-      }
-    })
-    .catch(err => {
-      if (sourceBadge) sourceBadge.textContent = 'Offline Archive';
-      if (readmeBox && !rawContent) {
-        readmeBox.innerHTML = `<div class="p-4 text-center mono xs faint">No README file found for ${repo.name}. Visit <a href="https://github.com/5ivesaw/${repo.name}" target="_blank" class="accent underline">GitHub</a>.</div>`;
-      }
-    });
-
-  // Raw / Rendered Toggle
-  $$('#readmeViewModeSeg button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('#readmeViewModeSeg button').forEach(b => b.classList.toggle('bg-paper-elevated', b === btn));
-      const mode = btn.dataset.rmode;
-      if (!readmeBox) return;
-      if (mode === 'raw') {
-        readmeBox.innerHTML = `<pre class="code-block" style="white-space:pre-wrap;font-size:12px;"><code>${escapeHtml(rawContent)}</code></pre>`;
-      } else {
-        readmeBox.innerHTML = renderedHtml;
-      }
-      sfx('tick');
-    });
+  const site = siteUrl(repo.home);
+  const isSawbyte = repo.name.toLowerCase() === 'sawbyte';
+  const demoLinks = {
+    fivesawUtils: ['A* Pathfinder demo', '#/demos/pathfinder'],
+    'Ascii-Media-Player': ['ASCII Media Player demo', '#/demos/ascii-player'],
+    'a-apple-that-is-bad': ['Cursed Text demo', '#/demos/bad-apple']
+  };
+  const demo = demoLinks[repo.name];
+  const clone = `git clone ${repoUrl(repo)}.git`;
+  mountPoint.innerHTML = `<div class="repo-page-wrap stack" style="gap:16px;max-width:850px;margin:0 auto;padding-bottom:40px;">
+    <section class="card pad repo-hero-card">
+      <div class="repo-title-row">
+        <span class="badge">5ivesaw /</span>
+        <h1 class="repo-title">${escapeHtml(repo.name)}</h1>
+        ${repo.fork ? '<span class="badge">Fork</span>' : ''}
+        ${repo.archived ? '<span class="badge">Archived</span>' : ''}
+      </div>
+      <p class="repo-desc">${repoSummary(repo)}</p>
+      <div class="repo-meta-chips">
+        <span class="chip xs font-mono">${getLangIcon(repo.lang)} ${escapeHtml(repo.lang || 'Code')}</span>
+        <span class="chip xs font-mono">★ ${Number(repo.stars) || 0}</span>
+        ${repo.pushed ? `<span class="chip xs font-mono">Updated ${new Date(repo.pushed).toLocaleDateString()}</span>` : ''}
+      </div>
+      <div class="repo-header-actions" style="margin-top:16px;">
+        <a href="${repoUrl(repo)}" target="_blank" rel="noopener noreferrer" class="btn sm primary">GitHub Repository ↗</a>
+        ${site ? `<a href="${escapeHtml(site)}" target="_blank" rel="noopener noreferrer" class="btn sm ghost">Website ↗</a>` : ''}
+        ${demo ? `<a href="${demo[1]}" class="btn sm ghost">${demo[0]} ↗</a>` : ''}
+      </div>
+    </section>
+    ${isSawbyte ? sawbyteFeature(repo) : ''}
+    <section class="card pad repo-quick-info">
+      <span class="eyebrow">QUICK INFO</span>
+      <div class="repo-info-grid">
+        <div><span>Default branch</span><strong>${escapeHtml(repo.branch || 'main')}</strong></div>
+        <div><span>Forks</span><strong>${Number(repo.forks) || 0}</strong></div>
+        <div><span>Website</span><strong>${site ? `<a href="${escapeHtml(site)}" target="_blank" rel="noopener noreferrer">Visit site ↗</a>` : 'Not listed'}</strong></div>
+      </div>
+      ${repo.topics?.length ? `<div class="repo-topic-row">${repo.topics.slice(0, 6).map(t => `<span class="chip xs">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+    </section>
+    <section class="card pad repo-source-bar">
+      <div><span class="eyebrow">SOURCE</span><p class="xs muted">Clone the repository or read its full documentation on GitHub.</p></div>
+      <button type="button" id="copyCloneBtn" class="btn sm ghost">Copy clone command</button>
+    </section>
+  </div>`;
+  $('#copyCloneBtn', mountPoint)?.addEventListener('click', () => {
+    copyText(clone);
+    toast('Copied clone command', 'ok');
+    sfx('copy');
   });
 }
 
@@ -589,114 +361,56 @@ function renderDemosDirectory(mountPoint) {
 }
 
 function renderReposDirectory(mountPoint) {
-  let activeFilter = 'all';
-  let activeSort = 'stars';
-  let searchQuery = '';
+  let search = '';
+  let filter = 'all';
+  let visible = 12;
+  let sort = 'pushed';
 
-  function renderList() {
-    const q = searchQuery.toLowerCase().trim();
-    let list = state.repos.filter(r => {
-      const matchesCat = activeFilter === 'all' ||
-        (activeFilter === 'rust' && (r.lang === 'Rust')) ||
-        (activeFilter === 'systems' && (r.lang === 'Rust' || r.lang === 'C' || r.lang === 'Java' || r.lang === 'Lua')) ||
-        (activeFilter === 'interface' && (r.lang === 'TypeScript' || r.lang === 'JavaScript' || r.lang === 'HTML')) ||
-        (activeFilter === 'tooling' && (r.lang === 'Python' || r.lang === 'PowerShell' || r.lang === 'Shell'));
-      const matchesSearch = !q || r.name.toLowerCase().includes(q) || (r.desc && r.desc.toLowerCase().includes(q)) || (r.lang && r.lang.toLowerCase().includes(q));
-      return matchesCat && matchesSearch;
+  mountPoint.innerHTML = `<section class="card pad">
+    <div class="section-head mb-4">
+      <span class="eyebrow">PUBLIC CODE</span>
+      <h2>Repository Directory</h2>
+      <p class="muted sm">Short summaries from GitHub. Open a project for links and details.</p>
+      <div class="row wrap center mt-3" style="gap:8px;">
+        <select id="reposDirFilter" class="input" aria-label="Filter repositories" style="max-width:160px;height:34px;font-size:12px;">
+          <option value="all">All repositories</option><option value="featured">Featured</option>
+          <option value="sites">With a site</option><option value="forks">Forks</option>
+        </select>
+        <select id="reposDirSort" class="input" aria-label="Sort repositories" style="max-width:160px;height:34px;font-size:12px;">
+          <option value="pushed">Recently updated</option><option value="stars">Most stars</option><option value="name">Alphabetical</option>
+        </select>
+        <input type="search" id="reposDirSearch" placeholder="Search repositories..." aria-label="Search repositories" class="input" style="max-width:220px;height:34px;font-size:12px;" />
+      </div>
+      <span id="reposDirCountBadge" class="faint xs mono mt-2"></span>
+    </div>
+    <div id="reposDirectoryGrid" class="grid grid-3"></div>
+    <div class="row center mt-4"><button type="button" id="reposShowMore" class="btn sm ghost" hidden>Show more repositories</button></div>
+  </section>`;
+
+  function draw() {
+    const query = search.toLowerCase().trim();
+    const list = state.repos.filter(r => {
+      const matchesFilter = filter === 'all' ||
+        (filter === 'featured' && r.featured) ||
+        (filter === 'sites' && siteUrl(r.home)) ||
+        (filter === 'forks' && r.fork);
+      return matchesFilter && (!query || [r.name, r.desc, r.lang, ...(r.topics || [])]
+        .some(value => String(value || '').toLowerCase().includes(query)));
     });
-
-    if (activeSort === 'stars') list.sort((a, b) => (b.stars || 0) - (a.stars || 0));
-    else if (activeSort === 'pushed') list.sort((a, b) => new Date(b.pushed || 0) - new Date(a.pushed || 0));
-    else if (activeSort === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
-
-    const gridEl = $('#reposDirectoryGrid', mountPoint);
-    const countEl = $('#reposDirCountBadge', mountPoint);
-    if (countEl) countEl.textContent = `Showing ${list.length} of ${state.repos.length} repositories`;
-    if (!gridEl) return;
-
-    if (!list.length) {
-      gridEl.innerHTML = `<div class="card pad center mono xs faint" style="grid-column:1/-1;">No repositories match query "${searchQuery}".</div>`;
-      return;
-    }
-
-    gridEl.innerHTML = list.map((r, i) => `
-      <a href="#/repos/${r.name}" class="tile hover repo-cartridge pop-in" style="display:flex;flex-direction:column;padding:14px;text-decoration:none;">
-        <div class="row between xs mono faint pb-1" style="border-bottom:1px solid var(--line);">
-          <span class="row items-center" style="gap:4px;">
-            ${r.icon ? `<img src="${r.icon}" alt="" class="w-4 h-4 rounded object-contain" onerror="this.style.display='none'"/>` : getLangIcon(r.lang)}
-            <strong style="color:var(--ink);">#${String(i + 1).padStart(2, '0')}</strong>
-          </span>
-          <span>★ <strong>${r.stars || 0}</strong></span>
-        </div>
-
-        <div class="row between items-center" style="margin:6px 0 2px;">
-          <h3 class="mono font-bold text-sm truncate" style="color:var(--ink);">${r.name}</h3>
-          <span class="badge" style="font-size:9px;">${r.branch || 'main'}</span>
-        </div>
-
-        <p class="xs muted clamp-2" style="min-height:32px;line-height:1.4;">${r.desc || r.readme || 'Public repository by @5ivesaw.'}</p>
-
-        <div class="row between items-center xs mono faint mt-auto pt-2" style="border-top:1px solid var(--line);">
-          <span class="row items-center" style="gap:4px;">${getLangIcon(r.lang)} <span>${r.lang || 'Code'}</span></span>
-          <span class="accent font-medium">Open Page ↗</span>
-        </div>
-      </a>
-    `).join('');
+    list.sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name) :
+      sort === 'stars' ? (b.stars || 0) - (a.stars || 0) || new Date(b.pushed || 0) - new Date(a.pushed || 0) :
+      new Date(b.pushed || 0) - new Date(a.pushed || 0));
+    $('#reposDirCountBadge', mountPoint).textContent = `Showing ${Math.min(visible, list.length)} of ${list.length} matches · ${state.repos.length} public repositories`;
+    $('#reposDirectoryGrid', mountPoint).innerHTML = list.length ? list.slice(0, visible).map(repoCard).join('') :
+      '<p class="muted" style="grid-column:1/-1;text-align:center;">No repositories match this search.</p>';
+    $('#reposShowMore', mountPoint).hidden = visible >= list.length;
   }
 
-  mountPoint.innerHTML = `
-    <div class="stack" style="gap:20px;">
-      <section class="card pad">
-        <div class="section-head mb-4">
-          <span class="eyebrow">COMPLETE ARCHIVE</span>
-          <h2>Repositories Directory</h2>
-          <p class="muted sm" style="max-width:65ch;">
-            Complete archive of open source code repositories, automation bots, and frameworks created by @5ivesaw.
-          </p>
-          <div class="row wrap center mt-3" style="gap:8px;">
-            <div class="seg" id="reposDirFilterSeg">
-              <button type="button" data-filter="all" class="bg-paper-elevated font-semibold">All (${state.repos.length})</button>
-              <button type="button" data-filter="rust">Rust</button>
-              <button type="button" data-filter="systems">Systems</button>
-              <button type="button" data-filter="interface">Interface</button>
-              <button type="button" data-filter="tooling">Tooling</button>
-            </div>
-            <select id="reposDirSortSelect" class="input" style="max-width:140px;height:34px;font-size:11.5px;padding:0 6px;">
-              <option value="stars">Most Stars</option>
-              <option value="pushed">Recently Pushed</option>
-              <option value="name">Alphabetical</option>
-            </select>
-            <input type="text" id="reposDirSearchInput" placeholder="Search repos, tags, languages..." class="input" style="max-width:210px;height:34px;font-size:12px;" />
-          </div>
-          <span id="reposDirCountBadge" class="faint xs mono mt-2">Showing repositories...</span>
-        </div>
-
-        <div id="reposDirectoryGrid" class="grid grid-3"></div>
-      </section>
-    </div>
-  `;
-
-  renderList();
-
-  $$('#reposDirFilterSeg button', mountPoint).forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('#reposDirFilterSeg button', mountPoint).forEach(b => b.classList.toggle('bg-paper-elevated', b === btn));
-      activeFilter = btn.dataset.filter;
-      renderList();
-      sfx('tick');
-    });
-  });
-
-  $('#reposDirSortSelect', mountPoint)?.addEventListener('change', e => {
-    activeSort = e.target.value;
-    renderList();
-    sfx('tick');
-  });
-
-  $('#reposDirSearchInput', mountPoint)?.addEventListener('input', e => {
-    searchQuery = e.target.value;
-    renderList();
-  });
+  $('#reposDirFilter', mountPoint).addEventListener('change', e => { filter = e.target.value; visible = 12; draw(); });
+  $('#reposDirSort', mountPoint).addEventListener('change', e => { sort = e.target.value; draw(); });
+  $('#reposDirSearch', mountPoint).addEventListener('input', e => { search = e.target.value; visible = 12; draw(); });
+  $('#reposShowMore', mountPoint).addEventListener('click', () => { visible += 12; draw(); });
+  draw();
 }
 
 function renderToolsDirectory(mountPoint) {
@@ -776,7 +490,11 @@ async function navigate() {
   const mountPoint = $('#subViewMount');
   const crumb = $('#crumbCurrent');
 
-  if (hash === '/demos' || hash === '/demos/') {
+  if (hash === '/disc-maker' || hash === '/disc-maker/') {
+    crumb.textContent = 'disc_maker';
+    state.currentUnmount = mountDiscMakerPage(mountPoint);
+    return;
+  } else if (hash === '/demos' || hash === '/demos/') {
     crumb.textContent = 'Flagship Demos Directory';
     renderDemosDirectory(mountPoint);
     return;
@@ -833,52 +551,18 @@ async function navigate() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Repositories Rendering
+// Keep the homepage selective; the full public catalog lives in the directory.
 function renderRepositories() {
   const container = $('#repoContainer');
-  const countBadge = $('#repoCountBadge');
   if (!container) return;
-
-  const q = state.searchQuery.toLowerCase().trim();
-  const filtered = state.repos.filter(r => {
-    const matchesScope = state.scope === 'all' || q.length > 0 || state.filter !== 'all' ? true : (r.stars > 0 || r.icon || r.name.toLowerCase().includes('saw'));
-    const matchesCat = state.filter === 'all' ||
-      (state.filter === 'systems' && (r.lang === 'Rust' || r.lang === 'C' || r.lang === 'Java' || r.lang === 'Lua')) ||
-      (state.filter === 'interface' && (r.lang === 'TypeScript' || r.lang === 'JavaScript' || r.lang === 'HTML')) ||
-      (state.filter === 'tooling' && (r.lang === 'Python' || r.lang === 'PowerShell' || r.lang === 'Shell'));
-    const matchesSearch = !q || r.name.toLowerCase().includes(q) || (r.desc && r.desc.toLowerCase().includes(q)) || (r.lang && r.lang.toLowerCase().includes(q));
-    return matchesScope && matchesCat && matchesSearch;
-  });
-
-  if (countBadge) countBadge.textContent = `Showing ${filtered.length} of ${state.repos.length} repositories`;
-
-  if (!filtered.length) {
-    container.innerHTML = `<div class="card pad center mono xs faint" style="grid-column:1/-1;">No repositories match query "${q}".</div>`;
-    return;
-  }
-
-  container.innerHTML = filtered.map((r, i) => `
-    <a href="#/repos/${r.name}" data-repo-id="${r.name}" class="tile hover repo-cartridge pop-in" style="--i:${i % 12};cursor:pointer;text-decoration:none;display:flex;flex-direction:column;">
-      <div class="row between xs mono faint pb-1" style="border-bottom:1px solid var(--line);">
-        <span class="row items-center" style="gap:4px;">
-          ${r.icon ? `<img src="${r.icon}" alt="" class="w-4 h-4 rounded object-contain" onerror="this.style.display='none'"/>` : getLangIcon(r.lang)}
-          <strong style="color:var(--ink);">#${String(i + 1).padStart(2, '0')}</strong>
-        </span>
-        <span>${r.stars > 0 ? `★ ${r.stars}` : (r.fork ? 'Fork' : 'Source')}</span>
-      </div>
-
-      <div class="row between" style="margin:6px 0 2px;">
-        <h3 class="mono font-semibold truncate" style="font-size:14px;color:var(--ink);">${r.name}</h3>
-      </div>
-
-      <p class="xs muted clamp-2" style="min-height:32px;line-height:1.4;">${r.desc || r.readme || 'Public repository by @5ivesaw.'}</p>
-
-      <div class="row between items-center xs mono faint" style="margin-top:auto;padding-top:8px;border-top:1px solid var(--line);">
-        <span class="row items-center" style="gap:4px;">${getLangIcon(r.lang)} <span>${r.lang || 'Code'}</span></span>
-        <span class="accent font-medium">Open Page ↗</span>
-      </div>
-    </a>
-  `).join('');
+  const featured = state.repos.filter(repo => repo.featured && repo.name !== 'Sawbyte');
+  const sawbyte = state.repos.find(repo => repo.name === 'Sawbyte');
+  $('#sawbyteFeature').innerHTML = sawbyte ? sawbyteFeature(sawbyte) : '';
+  container.innerHTML = featured.map(repoCard).join('');
+  const count = $('#repoCountBadge');
+  if (count) count.textContent = `${featured.length + (sawbyte ? 1 : 0)} featured · ${state.repos.length} public repositories`;
+  const directory = $('#allReposLink');
+  if (directory) directory.textContent = `Browse all ${state.repos.length} public repositories ↗`;
 }
 
 // Media & YouTube Transmissions
@@ -1564,9 +1248,42 @@ function initMusicDock() {
   const queueDrawer = $('#dockQueueDrawer');
   const queueList = $('#dockQueueList');
 
+  let source = 'playlist';
+  const sourceBtn = $('#dockSourceBtn');
+  function selectSource(next) {
+    source = next;
+    dock.classList.toggle('disc-source', next === 'disc');
+    sourceBtn.title = next === 'disc' ? 'Switch to playlist' : 'Switch to disc_maker';
+    sourceBtn.setAttribute('aria-label', sourceBtn.title);
+    if (next === 'disc') {
+      music.pause();
+      titleEl.textContent = 'disc_maker';
+      artistEl.textContent = 'Generated Minecraft music';
+      thumbEl.src = 'https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/music_disc_creator.png';
+      timeCurEl.textContent = '0'; timeDurEl.textContent = '∞'; progressEl.style.width = '0%';
+      playBtn.innerHTML = icon(discMaker.playing ? 'pause' : 'play');
+      volSlider.value = discMaker.volume;
+    } else {
+      discMaker.pause();
+      updateTrackMeta(music.track);
+      playBtn.innerHTML = icon('play');
+      volSlider.value = music.volume;
+    }
+    if (!queueDrawer.classList.contains('hidden')) renderQueueDrawer();
+  }
+  sourceBtn.addEventListener('click', () => selectSource(source === 'disc' ? 'playlist' : 'disc'));
+  discMaker.init();
+  discMaker.on('state', st => {
+    if (st === 'playing' && source !== 'disc') selectSource('disc');
+    if (source === 'disc') { playBtn.innerHTML = icon(st === 'playing' ? 'pause' : 'play'); playBtn.title = st === 'playing' ? 'Pause' : 'Play'; thumbEl.classList.toggle('playing', st === 'playing'); }
+  });
+  discMaker.on('step', ({step, bar}) => { if (source === 'disc') { progressEl.style.width = `${(step + 1) / 16 * 100}%`; timeCurEl.textContent = `Bar ${bar + 1}`; } });
+  discMaker.on('volume', v => { if (source === 'disc') { volSlider.value = v; muteBtn.innerHTML = discMaker.muted ? icon('mute') : icon('vol'); } });
+  discMaker.on('notice', msg => toast(msg, 'info'));
+
   // Update track meta
   function updateTrackMeta(t) {
-    if (!t) return;
+    if (!t || source === 'disc') return;
     titleEl.textContent = t.t || 'Unknown Track';
     artistEl.textContent = t.a || 'FiveSaw';
     thumbEl.src = thumb(t.id, 'default');
@@ -1576,6 +1293,7 @@ function initMusicDock() {
   music.on('track', updateTrackMeta);
 
   music.on('state', st => {
+    if (source === 'disc') { if (st === 'playing') music.pause(); return; }
     if (st === 'playing') {
       playBtn.innerHTML = icon('pause');
       playBtn.title = 'Pause';
@@ -1588,6 +1306,7 @@ function initMusicDock() {
   });
 
   music.on('time', ({ time, duration }) => {
+    if (source === 'disc') return;
     timeCurEl.textContent = formatTime(time);
     timeDurEl.textContent = formatTime(duration);
     const pct = duration > 0 ? (time / duration) * 100 : 0;
@@ -1595,6 +1314,7 @@ function initMusicDock() {
   });
 
   music.on('volume', v => {
+    if (source === 'disc') return;
     volSlider.value = v;
     muteBtn.innerHTML = music.muted ? icon('mute') : icon('vol');
   });
@@ -1667,7 +1387,7 @@ function initMusicDock() {
   });
 
   $('#topbarVisualizer')?.addEventListener('click', () => {
-    music.toggle();
+    if (source === 'disc') discMaker.toggle(); else music.toggle();
     sfx('click');
   });
 
@@ -1773,14 +1493,14 @@ function initMusicDock() {
     }
   });
 
-  playBtn.addEventListener('click', () => { music.toggle(); sfx('click'); });
-  prevBtn.addEventListener('click', () => { music.prev(); sfx('click'); });
-  nextBtn.addEventListener('click', () => { music.next(); sfx('click'); });
-  stopBtn.addEventListener('click', () => { music.stop(); sfx('click'); });
-  muteBtn.addEventListener('click', () => { music.toggleMute(); sfx('toggleOn'); });
+  playBtn.addEventListener('click', () => { source === 'disc' ? discMaker.toggle() : music.toggle(); sfx('click'); });
+  prevBtn.addEventListener('click', () => { source === 'disc' ? discMaker.randomize() : music.prev(); sfx('click'); });
+  nextBtn.addEventListener('click', () => { source === 'disc' ? discMaker.randomize() : music.next(); sfx('click'); });
+  stopBtn.addEventListener('click', () => { source === 'disc' ? discMaker.stop() : music.stop(); sfx('click'); });
+  muteBtn.addEventListener('click', () => { source === 'disc' ? discMaker.toggleMute() : music.toggleMute(); sfx('toggleOn'); });
 
   volSlider.addEventListener('input', e => {
-    music.setVolume(Number(e.target.value));
+    if (source === 'disc') discMaker.setVolume(Number(e.target.value)); else music.setVolume(Number(e.target.value));
   });
 
   shuffleBtn.addEventListener('click', () => {
@@ -1796,6 +1516,7 @@ function initMusicDock() {
   // Scrubbing progress
   const progressTrack = $('#dockProgressTrack');
   progressTrack.addEventListener('click', e => {
+    if (source === 'disc') return;
     const rect = progressTrack.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     music.seek(ratio * (music.duration || music.track?.d || 100));
@@ -1812,6 +1533,7 @@ function initMusicDock() {
   });
 
   function renderQueueDrawer() {
+    if (source === 'disc') { queueList.innerHTML = '<a href="#/disc-maker" class="btn sm">Open disc_maker studio →</a>'; return; }
     const upcoming = music.upNext(8);
     queueList.innerHTML = upcoming.map((t, idx) => `
       <div class="row between xs mono p-2 hover:bg-paper-surface rounded cursor-pointer" data-queue-id="${t.id}">
@@ -1858,10 +1580,10 @@ function initOverviewScroller() {
 
   const tray = $('#workspacesTray');
   if (tray) {
-    tray.innerHTML = state.repos.slice(0, 36).map(r => `
-      <a href="#/repos/${r.name}" class="ws-item-btn text-xs font-mono" title="${r.name} — Open workspace page">
-        ${r.icon ? `<img src="${r.icon}" alt="" class="w-4 h-4 object-contain rounded"/>` : getLangIcon(r.lang)}
-        <span class="ws-short-label">${r.name.slice(0, 10)}</span>
+    tray.innerHTML = state.repos.filter(r => r.featured).map(r => `
+      <a href="#/repos/${r.name}" class="ws-item-btn text-xs font-mono" title="${escapeHtml(r.name)} — Open workspace page">
+        ${getLangIcon(r.lang)}
+        <span class="ws-short-label">${escapeHtml(r.name.slice(0, 10))}</span>
       </a>
     `).join('');
   }
@@ -2119,36 +1841,6 @@ async function initApp() {
       if (sfx.isEnabled()) sfx('success');
     });
   }
-
-  // Repo search & filter tabs
-  $('#repoSearchInput')?.addEventListener('input', e => {
-    state.searchQuery = e.target.value;
-    renderRepositories();
-  });
-
-  $$('.repo-filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.repo-filter-btn').forEach(b => b.classList.toggle('bg-paper-elevated', b === btn));
-      state.filter = btn.dataset.filter;
-      renderRepositories();
-      sfx('click');
-    });
-  });
-
-  $('#scopeFlagshipBtn')?.addEventListener('click', () => {
-    state.scope = 'flagship';
-    $('#scopeFlagshipBtn').classList.add('bg-paper-elevated');
-    $('#scopeAllReposBtn').classList.remove('bg-paper-elevated');
-    renderRepositories();
-    sfx('click');
-  });
-  $('#scopeAllReposBtn')?.addEventListener('click', () => {
-    state.scope = 'all';
-    $('#scopeAllReposBtn').classList.add('bg-paper-elevated');
-    $('#scopeFlagshipBtn').classList.remove('bg-paper-elevated');
-    renderRepositories();
-    sfx('click');
-  });
 
   // Modals close buttons
   $('#closeRepoModalBtn')?.addEventListener('click', closeRepoModal);

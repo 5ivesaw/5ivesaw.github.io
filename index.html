@@ -23,7 +23,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet" />
 
   <!-- Core Stylesheet -->
-  <link rel="stylesheet" href="./css/main.css?v=2.6" />
+  <link rel="stylesheet" href="./css/main.css?v=3.0" />
   <link rel="stylesheet" href="./css/tools.css?v=2.6" />
 
   <style>
@@ -365,7 +365,7 @@
         </a>
         <a href="#/repos" class="mobile-drawer-link" data-mview="repos">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span>Repositories Directory (47+)</span>
+          <span>Repositories Directory</span>
         </a>
         <a href="#/5tube" class="mobile-drawer-link" data-mview="tube" style="color:#FF3B14;font-weight:700;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
@@ -468,7 +468,7 @@
 
           <!-- Core Telemetry & Stack -->
           <div class="row wrap center xs mono" style="gap:6px;margin-top:4px;">
-            <span class="chip">Repos: <strong id="statRepos">47</strong></span>
+            <span class="chip">Repos: <strong id="statRepos">…</strong></span>
             <span class="chip">Core: <strong>Rust · TypeScript · Python · Lua · Java</strong></span>
             <span class="chip">Audio: <strong>296 Track Radio</strong></span>
           </div>
@@ -688,30 +688,19 @@
         </div>
       </section>
 
-      <!-- 4. REPOSITORY WORKSPACES (With search, filters, flagship view) -->
+      <!-- 4. FEATURED REPOSITORIES -->
       <section id="reposSection" class="card pad">
         <div class="section-head">
           <span class="eyebrow">5IVESAW REPOSITORIES</span>
-          <h2>Live Repository Workspaces</h2>
-          <div class="row wrap center" style="gap:8px;margin-top:8px;">
-            <div class="seg">
-              <button type="button" id="scopeFlagshipBtn" class="bg-paper-elevated font-semibold">★ Flagship</button>
-              <button type="button" id="scopeAllReposBtn">All Live Repos</button>
-            </div>
-            <div class="seg" role="tablist">
-              <button type="button" data-filter="all" class="repo-filter-btn bg-paper-elevated">All</button>
-              <button type="button" data-filter="systems" class="repo-filter-btn">Systems</button>
-              <button type="button" data-filter="interface" class="repo-filter-btn">Interface</button>
-              <button type="button" data-filter="tooling" class="repo-filter-btn">Tooling</button>
-            </div>
-            <input type="text" id="repoSearchInput" placeholder="Search repos or languages..." class="input" style="max-width:210px;height:32px;font-size:11.5px;" />
-          </div>
-          <span id="repoCountBadge" class="faint xs mono mt-2">Showing repositories...</span>
+          <h2>Featured Projects</h2>
+          <p class="muted sm">A few current builds. The full public repository directory is one click away.</p>
+          <span id="repoCountBadge" class="faint xs mono mt-2">Loading projects...</span>
         </div>
+        <div id="sawbyteFeature"></div>
         <div id="repoContainer" class="grid grid-3"></div>
         <div class="row center" style="margin-top:16px;">
           <a href="#/repos" class="btn sm ghost mono" style="gap:6px;">
-            <span>Explore All 47+ Repositories in Standalone Directory ↗</span>
+            <span id="allReposLink">Browse all public repositories ↗</span>
           </a>
         </div>
       </section>
@@ -781,6 +770,7 @@
         <span class="eyebrow">UP NEXT (RADIO QUEUE)</span>
         <span class="xs mono accent">296 Songs</span>
       </div>
+      <a href="#/disc-maker" class="btn sm ghost">Open disc_maker studio →</a>
       <div id="dockQueueList" class="stack" style="gap:4px;margin-top:8px;"></div>
     </div>
 
@@ -826,6 +816,7 @@
         </button>
         <button type="button" id="dockMuteBtn" class="btn sm icon ghost" title="Mute"><span data-icon="vol"></span></button>
         <input type="range" id="dockVolSlider" min="0" max="100" value="45" style="max-width:70px;" title="Volume" />
+        <button type="button" id="dockSourceBtn" class="btn sm icon ghost dock-source-btn" title="Switch to disc_maker" aria-label="Switch to disc_maker"><img src="https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.21.4/assets/minecraft/textures/item/music_disc_creator.png" alt="" /></button>
         <button type="button" id="dockQueueToggle" class="btn sm icon ghost" title="Queue / Playlist"><span data-icon="list"></span></button>
       </div>
     </div>
@@ -1056,6 +1047,6 @@
   <div class="toast-host" role="status" aria-live="polite"></div>
 
   <!-- Application Script -->
-  <script type="module" src="./js/app.js?v=2.6"></script>
+  <script type="module" src="./js/app.js?v=3.0"></script>
 </body>
 </html>
